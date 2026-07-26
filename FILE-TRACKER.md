@@ -16,8 +16,8 @@
 |---|---|---|
 | 0 — Foundations / docs | ✅ done | ✅ |
 | 1 — Sync relay server | ✅ **COMPLETE & VERIFIED** | ✅ `Phase 1: sync relay server + project docs` |
-| 2 — Extension (Track A, YouTube) | 🚧 core done + robustness pass; testing | ⬜ pending user's final test |
-| 3 — Own-files P2P (Track B) | ⬜ | ⬜ |
+| 2 — Extension (Track A, YouTube) | ✅ working (user-confirmed) | ✅ `Phase 2 polish...` |
+| 3 — Own-files P2P (Track B) | 🚧 slice 1 built (captureStream); testing | ⬜ |
 | 4 — DRM adapters | ⬜ | ⬜ |
 | 5 — Together layer (cam/chat) | ⬜ | ⬜ |
 | 6 — Polish + deploy | ⬜ | ⬜ |
@@ -26,7 +26,13 @@
 
 ## Current position
 
-- **Sync VERIFIED in Chrome** (both windows synced on same video ✅). Then this follow-up pass (UNTESTED — user testing next):
+- **Phase 3 slice 1 built (UNTESTED):** standalone `player/` page. Host picks a local file → streams to partner over WebRTC (captureStream / tier B2) with signaling relayed by the server (new `MSG.SIGNAL`). Play/pause/seek relayed. This proves the P2P pipeline end-to-end. **Next iteration = B1 lossless file-byte transfer + MSE for native quality** (roadmap 3.3).
+- **▶ TEST Phase 3:** open `player/index.html` in two windows (host + partner). Host: name → START A ROOM → CHOOSE A MOVIE FILE. Partner: JOIN with code → should see the streamed video. Verify play/pause mirrors.
+- **⚠️ captureStream is provisional** — re-encoded/adaptive quality. B1 upgrade pending (user's quality requirement).
+
+---
+### (previous) Phase 2 history
+- **Sync VERIFIED in Chrome** (both windows synced on same video ✅). Then follow-up pass:
   - **Presence bug FIXED**: joiner now learns the host is already there (server sends `partnerHere` + `partnerName` in the ROOM reply). Was one-way before.
   - **Usernames**: lobby has a name field; name rides create/join/presence; popup shows "<name> is watching with you".
   - **Share/invite LINK**: Create → "COPY INVITE LINK" copies `youtube.com/watch?v=…#pawse=CODE`; partner pastes it → content script auto-joins (`AUTOJOIN`) + follows the video. One click.
@@ -87,7 +93,11 @@ pawse/
 │       ├── popup.css            ✅ "Cream & Ginger" pixel theme, overflow-safe
 │       └── fonts/
 │           └── PressStart2P.ttf ✅ bundled 8-bit font (OFL)
-├── player/                      ⬜ Phase 3 — Track B (own-files P2P player)
+├── player/                      🚧 Phase 3 — Track B (own-files P2P player) — slice 1
+│   ├── index.html               ✅ standalone page: lobby + room + video stage
+│   ├── config.js                ✅ relay URL + STUN ICE servers
+│   ├── player.js                ✅ WS + WebRTC (captureStream) + room + sync
+│   └── style.css                ✅ Cream & Ginger pixel theme, full-page layout
 └── shared/                      ⬜ later — theme tokens + protocol shared across clients
 ```
 

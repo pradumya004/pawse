@@ -1,0 +1,354 @@
+/*
+  player/style.css — Pawse own-files player, "Cream & Ginger" pixel-cat theme.
+  Full-page layout (unlike the 300px popup): a top bar, a centered card in the
+  lobby, and a big video stage in the room. Same tokens/feel as the extension.
+*/
+
+@font-face {
+  font-family: "PressStart";
+  src: url("../extension/popup/fonts/PressStart2P.ttf") format("truetype");
+  font-display: swap;
+}
+
+:root {
+  --bg: #f4ecd8;
+  --panel: #e7dabc;
+  --ink: #2a2438;
+  --ink-soft: #7a6f5d;
+  --ginger: #ef7d1a;
+  --pink: #e85d86;
+  --live: #3a9d4a;
+  --off: #d9463f;
+  --pixel-font: "PressStart", "Courier New", monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  image-rendering: pixelated;
+}
+
+body {
+  position: relative;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--pixel-font);
+  display: flex;
+  flex-direction: column;
+}
+
+.scanlines {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(42, 36, 56, 0.04) 0px,
+    rgba(42, 36, 56, 0.04) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+/* --- top bar --- */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 3px solid var(--ink);
+  background: var(--panel);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cat {
+  width: 44px;
+  height: 40px;
+  filter: drop-shadow(2px 2px 0 rgba(42, 36, 56, 0.3));
+}
+
+.logo {
+  font-size: 18px;
+  letter-spacing: 1px;
+  color: var(--ginger);
+  text-shadow: 2px 2px 0 var(--ink);
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: var(--ink-soft);
+}
+
+.dot {
+  width: 9px;
+  height: 9px;
+  background: var(--off);
+  box-shadow: 2px 2px 0 var(--ink);
+}
+
+.dot.on {
+  background: var(--live);
+}
+
+/* --- main stage --- */
+.stage {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+}
+
+/* --- lobby card --- */
+.card {
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  border: 3px solid var(--ink);
+  box-shadow: 6px 6px 0 rgba(42, 36, 56, 0.35);
+  padding: 26px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cardTitle {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ginger);
+}
+
+.cardSub {
+  font-size: 8px;
+  line-height: 1.9;
+  letter-spacing: 0.5px;
+  color: var(--ink-soft);
+  margin-bottom: 4px;
+}
+
+.label {
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: var(--ink-soft);
+}
+
+.input {
+  width: 100%;
+  font-family: var(--pixel-font);
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: var(--ink);
+  background: #fff;
+  border: 3px solid var(--ink);
+  padding: 10px 9px;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--ginger);
+}
+
+.input::placeholder {
+  color: #b8ac92;
+}
+
+#roomInput {
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+}
+
+/* --- buttons --- */
+.btn {
+  font-family: var(--pixel-font);
+  font-size: 9px;
+  line-height: 1.5;
+  letter-spacing: 1px;
+  padding: 12px 12px;
+  color: var(--bg);
+  background: var(--ink);
+  border: 3px solid var(--ink);
+  box-shadow: 4px 4px 0 rgba(42, 36, 56, 0.4);
+  cursor: pointer;
+}
+
+.btn:hover {
+  filter: brightness(1.08);
+}
+
+.btn:active {
+  transform: translate(4px, 4px);
+  box-shadow: 0 0 0;
+}
+
+.btn.primary {
+  background: var(--ginger);
+  color: var(--ink);
+}
+
+.btn.small {
+  font-size: 8px;
+  padding: 8px 10px;
+  box-shadow: 3px 3px 0 rgba(42, 36, 56, 0.4);
+}
+
+.btn.leave {
+  background: #fff;
+  color: var(--pink);
+  border-color: var(--pink);
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: var(--ink-soft);
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  height: 2px;
+  background: var(--panel);
+}
+
+.divider span {
+  padding: 0 10px;
+}
+
+.join {
+  display: flex;
+  gap: 8px;
+}
+
+.join .input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* --- room view --- */
+#room {
+  width: 100%;
+  max-width: 960px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.roombar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #fff;
+  border: 3px solid var(--ink);
+}
+
+.roomcode {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.code {
+  font-size: 16px;
+  letter-spacing: 3px;
+  color: var(--ginger);
+}
+
+.partner {
+  flex: 1;
+  min-width: 140px;
+  text-align: center;
+  font-size: 8px;
+  letter-spacing: 0.5px;
+  color: var(--ink-soft);
+  padding: 6px;
+  border: 2px dashed var(--ink-soft);
+}
+
+.partner.active {
+  color: var(--ink);
+  border: 2px solid var(--pink);
+}
+
+.leave {
+  margin-left: auto;
+}
+
+/* --- file picker --- */
+.filepick {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.filebtn {
+  display: inline-block;
+}
+
+.filename {
+  font-size: 8px;
+  color: var(--ink-soft);
+  word-break: break-all;
+}
+
+/* --- video --- */
+.videowrap {
+  position: relative;
+  background: #000;
+  border: 3px solid var(--ink);
+  box-shadow: 6px 6px 0 rgba(42, 36, 56, 0.35);
+}
+
+.video {
+  display: block;
+  width: 100%;
+  max-height: 70vh;
+  background: #000;
+}
+
+.videohint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: #f4ecd8;
+  text-align: center;
+  padding: 20px;
+  text-shadow: 2px 2px 0 #000;
+}
+
+/* --- footer --- */
+.pagefoot {
+  text-align: center;
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: var(--ink-soft);
+  padding: 14px;
+}
+
+.hidden {
+  display: none !important;
+}

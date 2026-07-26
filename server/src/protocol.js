@@ -29,6 +29,7 @@ export const MSG = {
   CONTROL: "control", // playback command: play / pause / seek / rate
   VIDEO: "video", // "I switched to this video" — partner follows (non-DRM only)
   BUFFER: "buffer", // "I stalled / I recovered" — makes both sides wait together
+  SIGNAL: "signal", // WebRTC signaling (SDP offer/answer + ICE) for Track B P2P
   CHAT: "chat", // text message or reaction
 };
 

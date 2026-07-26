@@ -202,6 +202,15 @@ function handle(ws, msg) {
       break;
     }
 
+    // WebRTC signaling (Track B): relay SDP/ICE verbatim to the other peer.
+    // The server is a dumb pipe here — it never inspects the payload.
+    case MSG.SIGNAL: {
+      const room = getRoom(ws.roomCode);
+      if (!room) return;
+      broadcast(room, MSG.SIGNAL, { data: msg.data, from: ws.id }, ws.id);
+      break;
+    }
+
     // Chat / reaction: relay to the partner.
     case MSG.CHAT: {
       const room = getRoom(ws.roomCode);
