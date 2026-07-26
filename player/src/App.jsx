@@ -6,6 +6,7 @@
 import { useEffect, useRef, useState } from "react";
 import { PawseClient } from "./lib/PawseClient.js";
 import Cat from "./Cat.jsx";
+import MeowFeed from "./MeowFeed.jsx";
 
 export default function App() {
   const [s, setS] = useState({
@@ -16,6 +17,8 @@ export default function App() {
     partnerName: null,
     fileName: null,
     hint: "",
+    progress: 0,
+    transfer: "idle",
   });
   const [name, setName] = useState(localStorage.getItem("pawse_name") || "");
   const [code, setCode] = useState("");
@@ -24,48 +27,44 @@ export default function App() {
   const clientRef = useRef(null);
   const videoRef = useRef(null);
 
-  // Create the client once, on mount.
   useEffect(() => {
     const c = new PawseClient({ onState: setS });
     clientRef.current = c;
     c.connect();
   }, []);
 
-  // Attach the <video> element to the client whenever the room view is showing.
   useEffect(() => {
     if (s.room && videoRef.current) clientRef.current?.attachVideo(videoRef.current);
   }, [s.room]);
 
   const inRoom = !!s.room;
   const isHost = s.role === "host";
+  const online = ["connected", "hosting", "in room", "watching"].includes(s.status);
+  const transferring = s.transfer === "sending" || s.transfer === "receiving";
+  const pct = Math.round((s.progress || 0) * 100);
 
   function saveName() {
     localStorage.setItem("pawse_name", name.trim());
   }
-
-  function onCreate() {
+  const onCreate = () => {
     saveName();
     clientRef.current.create(name.trim());
-  }
-  function onJoin() {
+  };
+  const onJoin = () => {
     if (!code.trim()) return;
     saveName();
     clientRef.current.join(code.trim().toUpperCase(), name.trim());
-  }
-  function onLeave() {
-    clientRef.current.leave();
-  }
-  function onFile(e) {
-    const file = e.target.files[0];
-    if (file) clientRef.current.chooseFile(file);
-  }
-  function onCopy() {
+  };
+  const onLeave = () => clientRef.current.leave();
+  const onFile = (e) => {
+    const f = e.target.files[0];
+    if (f) clientRef.current.chooseFile(f);
+  };
+  const onCopy = () => {
     navigator.clipboard.writeText(s.room);
     setCopied(true);
     setTimeout(() => setCopied(false), 1200);
-  }
-
-  const online = ["connected", "hosting", "in room", "streaming"].includes(s.status);
+  };
 
   return (
     <>
@@ -86,22 +85,24 @@ export default function App() {
         {!inRoom ? (
           // ============ LOBBY ============
           <section className="card">
-            <h2 className="cardTitle">watch your own movies, together</h2>
-            <p className="cardSub">one of you picks a file — the other just joins. no accounts, no uploads.</p>
+            <div className="paws">🐾</div>
+            <h2 className="cardTitle">watch your movies, together</h2>
+            <p className="cardSub">one of you picks a file — the other just joins.<br />no accounts. no uploads. just you two &amp; a cat. 🐱</p>
 
-            <label className="label" htmlFor="name">WHO ARE YOU?</label>
+            <label className="label" htmlFor="name">WHAT DO WE CALL YOU?</label>
             <input
               id="name"
               className="input"
-              placeholder="your name"
+              placeholder="your name, cutie"
               maxLength={12}
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
 
-            <button className="btn primary" onClick={onCreate}>START A ROOM (I HAVE THE FILE)</button>
+            <button className="btn primary big" onClick={onCreate}>🎬 START A ROOM</button>
+            <div className="tinyhint">(pick this one if you have the movie file)</div>
 
-            <div className="divider"><span>OR JOIN YOUR PARTNER</span></div>
+            <div className="divider"><span>OR SNEAK INTO A ROOM</span></div>
 
             <div className="join">
               <input
@@ -114,6 +115,8 @@ export default function App() {
               />
               <button className="btn" onClick={onJoin}>JOIN</button>
             </div>
+
+            <MeowFeed caption="today's certified cat content" />
           </section>
         ) : (
           // ============ ROOM ============
@@ -122,7 +125,7 @@ export default function App() {
               <div className="roomcode"><span className="label">ROOM</span> <span className="code">{s.room}</span></div>
               <button className="btn small" onClick={onCopy}>{copied ? "✓ COPIED" : "📋 COPY CODE"}</button>
               <div className={"partner" + (s.partnerHere ? " active" : "")}>
-                {s.partnerHere ? `${s.partnerName || "your partner"} is here` : "waiting for your partner..."}
+                {s.partnerHere ? `😻 ${s.partnerName || "your partner"} is here` : "😿 waiting for your partner..."}
               </div>
               <button className="btn small leave" onClick={onLeave}>LEAVE</button>
             </div>
@@ -131,7 +134,16 @@ export default function App() {
               <div className="filepick">
                 <label htmlFor="file" className="btn primary filebtn">🎬 CHOOSE A MOVIE FILE</label>
                 <input id="file" type="file" accept="video/*" hidden onChange={onFile} />
-                {s.fileName && <span className="filename">{s.fileName}</span>}
+                {s.fileName && <span className="filename">🎞️ {s.fileName}</span>}
+              </div>
+            )}
+
+            {transferring && (
+              <div className="progress">
+                <div className="progresslabel">
+                  {s.transfer === "sending" ? "beaming the movie to your partner" : "catching the movie"} — {pct}%
+                </div>
+                <div className="progressbar"><div className="progressfill" style={{ width: pct + "%" }} /></div>
               </div>
             )}
 
@@ -139,11 +151,13 @@ export default function App() {
               <video ref={videoRef} className="video" controls playsInline />
               {s.hint && <div className="videohint">{s.hint}</div>}
             </div>
+
+            {(!s.partnerHere || transferring) && <MeowFeed caption="stretch those paws, it's almost movie time" />}
           </section>
         )}
       </main>
 
-      <footer className="pagefoot">watch together, purr-fectly in sync 🐾</footer>
+      <footer className="pagefoot">made with 🐾 &amp; love · watch together, purr-fectly in sync</footer>
     </>
   );
 }

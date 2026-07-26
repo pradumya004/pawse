@@ -27,9 +27,12 @@
 ## Current position
 
 - **Phase 3 slice 1 built (UNTESTED):** standalone `player/` page. Host picks a local file → streams to partner over WebRTC (captureStream / tier B2) with signaling relayed by the server (new `MSG.SIGNAL`). Play/pause/seek relayed. This proves the P2P pipeline end-to-end. **Next iteration = B1 lossless file-byte transfer + MSE for native quality** (roadmap 3.3).
-- **Player is now a Vite + React app** (user wanted a real `npm run dev` frontend; the extension stays vanilla). Logic lives in `PawseClient` (plain class); React only renders. Build verified (`npm run build` → dist/ ok).
-- **▶ DEV WORKFLOW:** backend `cd server && npm run dev`; frontend `cd player && npm run dev` → http://localhost:5173. Open that URL in two windows to test host/partner.
-- **⚠️ captureStream is provisional** — re-encoded/adaptive quality. B1 lossless upgrade pending (user's quality requirement).
+- **Player = Vite + React app.** Logic in `PawseClient` (plain class); React only renders.
+- **QUALITY FIX DONE (B1):** replaced laggy captureStream with **P2P file-byte transfer** — host sends the original file over a WebRTC DataChannel (16KB chunks, backpressure); partner reassembles a Blob and plays the NATIVE file locally. Both play local copies → native quality, seekable, sync via control events. Progress bar shows transfer %. Tradeoff: partner downloads before watching (pre-load model).
+- **Meow Feed added:** rotating cat memes (meme-api.com → Reddit, CORS-ok) in lobby + while waiting/transferring. Graceful fallback if API down. Files: `src/MeowFeed.jsx`.
+- **UI made cuter/funkier:** wiggling paws, playful copy, 😻/😿 partner states, striped progress bar.
+- **▶ DEV WORKFLOW:** backend `cd server && npm run dev`; frontend `cd player && npm run dev` → http://localhost:5173. Two windows to test.
+- **Next Track B:** B0 shared-file detection (skip transfer if both have it), subtitles, MSE play-while-downloading for huge files (current impl holds file in memory on receiver).
 
 **Stack decision (locked):** extension = vanilla HTML/CSS/JS (loads unpacked). player = Vite + React (real web app; where React earns its keep). server = Node. Future paid dashboard would also be React.
 
@@ -105,12 +108,13 @@ pawse/
 │   │   └── PressStart2P.ttf      ✅ bundled pixel font (served at /PressStart2P.ttf)
 │   └── src/
 │       ├── main.jsx             ✅ React root
-│       ├── App.jsx              ✅ UI (lobby/room views) — calls PawseClient
+│       ├── App.jsx              ✅ UI (lobby/room) + progress bar + Meow Feed
 │       ├── Cat.jsx              ✅ pixel-cat SVG component
+│       ├── MeowFeed.jsx         ✅ rotating cat memes (meme-api.com)
 │       ├── config.js            ✅ relay URL + STUN servers
-│       ├── styles.css           ✅ Cream & Ginger pixel theme
+│       ├── styles.css           ✅ Cream & Ginger pixel theme + cute bits
 │       └── lib/
-│           └── PawseClient.js   ✅ framework-agnostic WS + WebRTC + sync class
+│           └── PawseClient.js   ✅ WS + WebRTC DataChannel FILE TRANSFER (B1) + sync
 └── shared/                      ⬜ later — theme tokens + protocol shared across clients
 ```
 

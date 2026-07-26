@@ -2,21 +2,24 @@
  * @file src/lib/PawseClient.js
  * Framework-agnostic Pawse client for the own-files player (Track B).
  *
- * Deliberately NOT a React component — real-time WebRTC/WebSocket logic doesn't
- * belong in the render cycle. React (App.jsx) just calls these methods and
- * subscribes to `onState` for UI updates. This keeps the tricky bits testable
- * and isolated.
+ * QUALITY-FIRST DESIGN (roadmap tiers B1/B0): we do NOT live-stream a re-encoded
+ * picture (that was the laggy captureStream slice). Instead the HOST sends the
+ * ORIGINAL file's bytes over a WebRTC DataChannel; the PARTNER reassembles them
+ * into the exact same file and plays it LOCALLY. Result: both sides play native,
+ * bit-identical video — no re-encode, no live-stream lag, fully seekable — and
+ * stay in sync via play/pause/seek control events (like the extension).
  *
- * Responsibilities:
- *   - connect to the relay, create/join/leave rooms
- *   - HOST: capture a chosen local file and stream it over WebRTC
- *   - FOLLOWER: receive and display the stream
- *   - relay play/pause/seek so both stay in sync
+ * Tradeoff: the partner downloads before watching (peer-to-peer, so it's fast on
+ * a LAN and matches the host's upload over the internet). This is the "pre-load"
+ * model from the roadmap — the price of perfect quality with zero playback lag.
  *
- * NOTE (quality): uses captureStream() (roadmap tier "B2") to prove the P2P
- * pipeline. Lossless file-byte transfer (B1/B0) is the next iteration.
+ * React (App.jsx) only calls these methods and subscribes to `onState`.
  */
 import { PAWSE_CONFIG } from "../config.js";
+
+const CHUNK = 16 * 1024; // 16 KB DataChannel chunks (SCTP-safe)
+const HIGH_WATER = 8 * 1024 * 1024; // pause sending above 8 MB buffered
+const LOW_WATER = 2 * 1024 * 1024; // resume once drained below 2 MB
 
 export class PawseClient {
   /** @param {{onState: (s: object) => void}} opts */
@@ -32,17 +35,25 @@ export class PawseClient {
     this.status = "connecting";
     this.fileName = null;
 
-    // WebRTC
+    // WebRTC / transfer
     this.pc = null;
-    this.localStream = null;
+    this.channel = null;
+    this.file = null; // host: the chosen File
     this.fileChosen = false;
-    this.pending = []; // ICE candidates arrived before remote description
-    this.suppress = false; // echo-suppression while applying a remote control
-    this.video = null; // <video> element, set via attachVideo()
-    this.hint = ""; // hint text for the video overlay
+    this.pending = [];
+    this.suppress = false;
+    this.video = null;
+    this.hint = "";
+    this.progress = 0; // 0..1 transfer progress
+    this.transfer = "idle"; // idle | sending | receiving | ready
+    this._lastPct = -1;
+
+    // receive buffers
+    this._chunks = [];
+    this._recvBytes = 0;
+    this._meta = null;
   }
 
-  /** Push a state snapshot to the UI (React). */
   _emit() {
     this.onState({
       status: this.status,
@@ -52,10 +63,11 @@ export class PawseClient {
       partnerName: this.partnerName,
       fileName: this.fileName,
       hint: this.hint,
+      progress: this.progress,
+      transfer: this.transfer,
     });
   }
 
-  /** Give the client the <video> element and wire local playback events. */
   attachVideo(el) {
     if (this.video === el) return;
     this.video = el;
@@ -80,55 +92,55 @@ export class PawseClient {
   }
 
   _send(type, payload = {}) {
-    if (this.ws?.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify({ type, ...payload }));
-    }
+    if (this.ws?.readyState === WebSocket.OPEN) this.ws.send(JSON.stringify({ type, ...payload }));
   }
-
   _signal(data) {
     this._send("signal", { data });
   }
 
-  // ---- room actions (called by the UI) ----
+  // ---- room actions ----
 
   create(name) {
     this.myName = name || "Guest";
     this._send("create", { name: this.myName });
   }
-
   join(code, name) {
     this.myName = name || "Guest";
     this._send("join", { room: code, name: this.myName });
   }
-
   leave() {
     this._send("leave");
-    this._teardownPeer();
-    this.room = null;
-    this.role = null;
-    this.partnerHere = false;
-    this.partnerName = null;
-    this.fileChosen = false;
-    this.fileName = null;
-    this.status = "connected";
+    this._teardown();
+    Object.assign(this, {
+      room: null,
+      role: null,
+      partnerHere: false,
+      partnerName: null,
+      fileChosen: false,
+      fileName: null,
+      file: null,
+      progress: 0,
+      transfer: "idle",
+      status: "connected",
+    });
     this._emit();
   }
 
-  /** HOST picks a local file: play it locally, then stream if partner is here. */
+  /** HOST picks a local file: play it locally, then send it if partner's here. */
   chooseFile(file) {
     if (!this.video) return;
+    this.file = file;
     this.fileName = file.name;
-    this.video.srcObject = null;
-    this.video.src = URL.createObjectURL(file);
-    this.video.play().catch(() => {});
     this.fileChosen = true;
+    this.video.srcObject = null;
+    this.video.src = URL.createObjectURL(file); // host plays native file locally
     this.hint = this.partnerHere ? "" : "waiting for your partner to join...";
-    this._teardownPeer(); // if re-picking, restart the stream cleanly
-    this._maybeStartStream();
+    this._teardown();
+    this._maybeStartTransfer();
     this._emit();
   }
 
-  // ---- server message routing ----
+  // ---- server routing ----
 
   _handle(msg) {
     switch (msg.type) {
@@ -142,16 +154,14 @@ export class PawseClient {
         if (msg.partnerName) this.partnerName = msg.partnerName;
         this.status = this.role === "host" ? "hosting" : "in room";
         this.hint =
-          this.role === "host"
-            ? "choose a movie file to start"
-            : "waiting for the host to pick a movie...";
-        this._maybeStartStream();
+          this.role === "host" ? "choose a movie file to start" : "waiting for the host to pick a movie...";
+        this._maybeStartTransfer();
         this._emit();
         break;
       case "presence":
         this.partnerHere = msg.event === "joined";
         if (msg.name) this.partnerName = msg.name;
-        if (this.partnerHere) this._maybeStartStream();
+        if (this.partnerHere) this._maybeStartTransfer();
         this._emit();
         break;
       case "signal":
@@ -174,16 +184,16 @@ export class PawseClient {
     peer.onicecandidate = (e) => {
       if (e.candidate) this._signal({ candidate: e.candidate });
     };
-    peer.onconnectionstatechange = () => {
-      if (peer.connectionState === "connected") {
-        this.status = "streaming";
-        this._emit();
-      }
-    };
     return peer;
   }
 
-  _teardownPeer() {
+  _teardown() {
+    if (this.channel) {
+      try {
+        this.channel.close();
+      } catch {}
+      this.channel = null;
+    }
     if (this.pc) {
       this.pc.close();
       this.pc = null;
@@ -191,12 +201,14 @@ export class PawseClient {
     this.pending = [];
   }
 
-  /** HOST: once a file is chosen AND partner is present, offer the stream. */
-  _maybeStartStream() {
+  /** HOST: when a file is chosen AND the partner is here, open a channel + offer. */
+  _maybeStartTransfer() {
     if (this.role !== "host" || !this.fileChosen || !this.partnerHere || this.pc) return;
     this.pc = this._newPeer();
-    this.localStream = this.video.captureStream();
-    this.localStream.getTracks().forEach((t) => this.pc.addTrack(t, this.localStream));
+    this.channel = this.pc.createDataChannel("file");
+    this.channel.binaryType = "arraybuffer";
+    this.channel.bufferedAmountLowThreshold = LOW_WATER;
+    this.channel.onopen = () => this._sendFile();
     this.pc
       .createOffer()
       .then((o) => this.pc.setLocalDescription(o))
@@ -207,17 +219,8 @@ export class PawseClient {
   _handleSignal(data) {
     if (data.sdp) {
       if (data.sdp.type === "offer") {
-        // FOLLOWER: answer the host's offer and show the incoming stream.
         this.pc = this._newPeer();
-        this.pc.ontrack = (e) => {
-          this.video.srcObject = e.streams[0];
-          this.hint = "";
-          this._emit();
-          this.video.play().catch(() => {
-            this.hint = "click the video to start";
-            this._emit();
-          });
-        };
+        this.pc.ondatachannel = (e) => this._recvChannel(e.channel); // FOLLOWER receives
         this.pc
           .setRemoteDescription(data.sdp)
           .then(() => this._flush())
@@ -226,7 +229,6 @@ export class PawseClient {
           .then(() => this._signal({ sdp: this.pc.localDescription }))
           .catch((e) => console.warn("[Pawse] answer failed", e));
       } else if (data.sdp.type === "answer") {
-        // HOST: the follower answered.
         this.pc.setRemoteDescription(data.sdp).then(() => this._flush()).catch(() => {});
       }
     } else if (data.candidate) {
@@ -243,7 +245,79 @@ export class PawseClient {
     this.pending = [];
   }
 
-  // ---- playback sync ----
+  // ---- file transfer (host -> partner) ----
+
+  async _sendFile() {
+    const file = this.file;
+    this.transfer = "sending";
+    this.channel.send(JSON.stringify({ meta: true, name: file.name, size: file.size, mime: file.type }));
+    let offset = 0;
+    while (offset < file.size) {
+      // Backpressure: wait if the send buffer is too full.
+      if (this.channel.bufferedAmount > HIGH_WATER) {
+        await new Promise((res) => {
+          this.channel.onbufferedamountlow = () => {
+            this.channel.onbufferedamountlow = null;
+            res();
+          };
+        });
+      }
+      const buf = await file.slice(offset, offset + CHUNK).arrayBuffer();
+      this.channel.send(buf);
+      offset += buf.byteLength;
+      this._setProgress(offset / file.size);
+    }
+    this.channel.send(JSON.stringify({ done: true }));
+    this.transfer = "ready";
+    this.progress = 1;
+    this._emit();
+  }
+
+  _recvChannel(ch) {
+    ch.binaryType = "arraybuffer";
+    this._chunks = [];
+    this._recvBytes = 0;
+    this._meta = null;
+    this.transfer = "receiving";
+    this.hint = "receiving the movie...";
+    this._emit();
+    ch.onmessage = (e) => {
+      if (typeof e.data === "string") {
+        const m = JSON.parse(e.data);
+        if (m.meta) this._meta = m;
+        else if (m.done) this._assemble();
+        return;
+      }
+      this._chunks.push(e.data);
+      this._recvBytes += e.data.byteLength;
+      if (this._meta) this._setProgress(this._recvBytes / this._meta.size);
+    };
+  }
+
+  _assemble() {
+    const blob = new Blob(this._chunks, { type: this._meta?.mime || "video/mp4" });
+    this.video.srcObject = null;
+    this.video.src = URL.createObjectURL(blob); // partner now plays the NATIVE file
+    this.fileName = this._meta?.name || "movie";
+    this.transfer = "ready";
+    this.progress = 1;
+    this.hint = "";
+    this.status = "watching";
+    this._chunks = []; // free the chunk refs (blob holds the data)
+    this._emit();
+  }
+
+  /** Emit progress only when the whole-number percent changes (throttle). */
+  _setProgress(p) {
+    this.progress = p;
+    const pct = Math.floor(p * 100);
+    if (pct !== this._lastPct) {
+      this._lastPct = pct;
+      this._emit();
+    }
+  }
+
+  // ---- playback sync (both play local files, so seeks work) ----
 
   _reportControl(action) {
     if (this.suppress) return;
@@ -252,12 +326,7 @@ export class PawseClient {
 
   _applyRemoteControl(action, mediaTime) {
     this.suppress = true;
-    // Only seek our own local file (a follower's srcObject stream can't seek).
-    if (
-      typeof mediaTime === "number" &&
-      !this.video.srcObject &&
-      Math.abs(this.video.currentTime - mediaTime) > 0.5
-    ) {
+    if (typeof mediaTime === "number" && Math.abs(this.video.currentTime - mediaTime) > 0.5) {
       this.video.currentTime = mediaTime;
     }
     if (action === "play") this.video.play().catch(() => {});
