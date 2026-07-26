@@ -1,0 +1,14 @@
+{
+  "name": "pawse-server",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "description": "Pawse sync relay — rooms + broadcast for watch-together",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}
