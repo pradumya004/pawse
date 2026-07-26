@@ -23,5 +23,7 @@
 
   "permissions": ["storage", "tabs"],
 
-  "host_permissions": ["ws://localhost:8080/*", "http://localhost:8080/*"]
+  "host_permissions": ["ws://localhost:8080/*", "http://localhost:8080/*"],
+
+  "incognito": "split"
 }

@@ -1,14 +1,11 @@
 /*
   popup/popup.css — Pawse pixel-cat theme :: "Cream & Ginger"
 
-  Warm cream "sticker-book" background, charcoal ink, one ginger-cat accent.
-  Real 8-bit look with pure CSS: hard stepped borders, offset (never blurred)
-  shadows, blocky buttons that physically depress on press, subtle CRT
-  scanlines, pixel-crisp rendering, and the bundled Press Start 2P font.
-
-  Sizing rule (learned the hard way): Press Start 2P renders ~2x wider than a
-  normal monospace, so EVERY element is width-capped (width:100%, min-width:0 on
-  flex children, wrapping footer) to guarantee no horizontal overflow.
+  Warm cream "sticker-book" bg, charcoal ink, ginger accent. Real 8-bit look:
+  hard stepped borders, offset (never blurred) shadows, blocky buttons that
+  depress on press, subtle CRT scanlines, a hand-built pixel-art cat (SVG), and
+  the bundled Press Start 2P font. Every element is width-capped (Press Start 2P
+  renders ~2x wide) so there is never horizontal overflow.
 */
 
 @font-face {
@@ -18,14 +15,15 @@
 }
 
 :root {
-  --bg: #f4ecd8; /* warm cream (paper) */
-  --panel: #e7dabc; /* darker cream for insets */
-  --ink: #2a2438; /* charcoal text + borders */
-  --ink-soft: #7a6f5d; /* muted labels */
-  --ginger: #ef7d1a; /* ginger-cat accent (primary) */
-  --pink: #e85d86; /* kitty accent (sparingly) */
-  --live: #3a9d4a; /* connected dot */
-  --off: #d9463f; /* offline dot */
+  --bg: #f4ecd8;
+  --panel: #e7dabc;
+  --ink: #2a2438;
+  --ink-soft: #7a6f5d;
+  --ginger: #ef7d1a;
+  --ginger-deep: #d9660a;
+  --pink: #e85d86;
+  --live: #3a9d4a;
+  --off: #d9463f;
   --pixel-font: "PressStart", "Courier New", monospace;
 }
 
@@ -33,24 +31,24 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  image-rendering: pixelated; /* crisp, no anti-alias blur */
+  image-rendering: pixelated;
 }
 
 body {
   position: relative;
   width: 300px;
   max-width: 300px;
-  overflow-x: hidden; /* never scroll sideways */
+  overflow-x: hidden;
   background: var(--bg);
   color: var(--ink);
   font-family: var(--pixel-font);
 }
 
-/* --- subtle scanlines (dark on light) --- */
 .scanlines {
   position: absolute;
   inset: 0;
   pointer-events: none;
+  z-index: 10;
   background: repeating-linear-gradient(
     to bottom,
     rgba(42, 36, 56, 0.045) 0px,
@@ -58,14 +56,13 @@ body {
     transparent 1px,
     transparent 3px
   );
-  z-index: 10;
 }
 
 .wrap {
   padding: 18px 16px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 /* --- header / mascot --- */
@@ -73,31 +70,45 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .cat {
-  font-size: 40px;
-  line-height: 1;
-  filter: drop-shadow(3px 3px 0 rgba(42, 36, 56, 0.35));
-  animation: bob 1.2s steps(2) infinite; /* stepped = sprite-like, not smooth */
+  width: 72px;
+  height: 65px;
+  filter: drop-shadow(3px 3px 0 rgba(42, 36, 56, 0.3));
+  animation: bob 1.4s steps(2) infinite;
 }
 
 @keyframes bob {
-  0% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {
     transform: translateY(-3px);
   }
+}
+
+/* cat blink — eyelids flick shut briefly */
+.lid {
+  animation: blink 4s steps(1) infinite;
+}
+
+@keyframes blink {
+  0%,
+  92%,
   100% {
-    transform: translateY(0);
+    opacity: 0;
+  }
+  94%,
+  97% {
+    opacity: 1;
   }
 }
 
 .logo {
-  font-family: var(--pixel-font);
-  font-size: 18px;
+  font-size: 20px;
   letter-spacing: 1px;
   color: var(--ginger);
   text-shadow: 3px 3px 0 var(--ink);
@@ -126,7 +137,47 @@ body {
   background: var(--live);
 }
 
-/* --- buttons: full-width, blocky, hard shadow, depress on click --- */
+/* --- labels --- */
+.label {
+  display: block;
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: var(--ink-soft);
+}
+
+/* --- inputs --- */
+.input {
+  width: 100%;
+  font-family: var(--pixel-font);
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--ink);
+  background: #fff;
+  border: 3px solid var(--ink);
+  padding: 9px 8px;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--ginger);
+}
+
+.input::placeholder {
+  color: #b8ac92;
+  text-transform: none;
+  letter-spacing: 1px;
+}
+
+.input.name {
+  margin: 4px 0 4px;
+}
+
+#roomInput {
+  text-align: center;
+  text-transform: uppercase;
+}
+
+/* --- buttons: full-width, blocky, depress on click --- */
 .btn {
   width: 100%;
   font-family: var(--pixel-font);
@@ -146,7 +197,7 @@ body {
 }
 
 .btn:active {
-  transform: translate(4px, 4px); /* presses in */
+  transform: translate(4px, 4px);
   box-shadow: 0 0 0 var(--ink);
 }
 
@@ -155,16 +206,15 @@ body {
   color: var(--ink);
 }
 
-.btn.small {
-  width: auto;
-  flex-shrink: 0;
-  font-size: 8px;
-  padding: 7px 9px;
-  box-shadow: 3px 3px 0 rgba(42, 36, 56, 0.4);
+.btn.leave {
+  background: #fff;
+  color: var(--pink);
+  border-color: var(--pink);
+  box-shadow: 4px 4px 0 rgba(232, 93, 134, 0.35);
 }
 
-.btn.small:active {
-  transform: translate(3px, 3px);
+.btn.leave:active {
+  box-shadow: 0 0 0;
 }
 
 /* --- divider --- */
@@ -172,7 +222,8 @@ body {
   display: flex;
   align-items: center;
   text-align: center;
-  font-size: 8px;
+  font-size: 7px;
+  letter-spacing: 1px;
   color: var(--ink-soft);
 }
 
@@ -188,34 +239,23 @@ body {
   padding: 0 8px;
 }
 
-/* --- join row --- */
+/* --- lobby / room spacing --- */
+#lobby,
+#room {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .join {
   display: flex;
   gap: 8px;
   align-items: stretch;
 }
 
-.input {
+.join .input {
   flex: 1;
-  min-width: 0; /* allows the input to shrink instead of overflowing the row */
-  font-family: var(--pixel-font);
-  font-size: 11px;
-  letter-spacing: 2px;
-  text-align: center;
-  text-transform: uppercase;
-  color: var(--ink);
-  background: #fff;
-  border: 3px solid var(--ink);
-  padding: 8px 6px;
-}
-
-.input:focus {
-  outline: none;
-  border-color: var(--ginger);
-}
-
-.input::placeholder {
-  color: #b8ac92;
+  min-width: 0;
 }
 
 .join .btn {
@@ -233,36 +273,41 @@ body {
   border: 3px solid var(--ginger);
 }
 
-.label {
-  font-size: 8px;
-  color: var(--ink-soft);
+.room .label {
   flex-shrink: 0;
 }
 
 .code {
   flex: 1;
   min-width: 0;
-  font-family: var(--pixel-font);
-  font-size: 15px;
-  letter-spacing: 2px;
+  font-size: 16px;
+  letter-spacing: 3px;
   color: var(--ginger);
-  overflow: hidden;
-  text-overflow: ellipsis;
+  text-align: right;
 }
 
-/* --- footer: wraps so wide font never overflows --- */
+.hint {
+  font-size: 7px;
+  line-height: 1.7;
+  letter-spacing: 0.5px;
+  color: var(--ink-soft);
+  text-align: center;
+}
+
 /* --- partner presence --- */
 .partner {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 8px;
+  padding: 9px;
   font-size: 8px;
-  letter-spacing: 1px;
+  line-height: 1.5;
+  letter-spacing: 0.5px;
   color: var(--ink-soft);
   background: var(--panel);
   border: 2px dashed var(--ink-soft);
+  text-align: center;
 }
 
 .partner.active {
@@ -272,34 +317,23 @@ body {
 }
 
 .pcat {
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1;
+  flex-shrink: 0;
 }
 
-/* --- leave button (danger, but on-theme) --- */
-.btn.leave {
-  background: #fff;
-  color: var(--pink);
-  border-color: var(--pink);
-  box-shadow: 4px 4px 0 rgba(232, 93, 134, 0.35);
-}
-
-.btn.leave:active {
-  box-shadow: 0 0 0;
-}
-
+/* --- footer --- */
 .footer {
   text-align: center;
   font-size: 7px;
   line-height: 1.8;
   letter-spacing: 1px;
   color: var(--ink-soft);
-  opacity: 0.8;
-  white-space: normal;
-  word-break: break-word;
+  opacity: 0.75;
   margin-top: 2px;
 }
 
+/* Utility: must always win, even over ID selectors like #room { display: flex }. */
 .hidden {
-  display: none;
+  display: none !important;
 }

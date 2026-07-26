@@ -32,6 +32,8 @@ const state = {
   room: null, // current room code
   role: null, // "host" | "follower"
   syncTabId: null, // the YouTube tab whose <video> we're syncing
+  myName: "Guest", // our display name
+  partnerName: null, // the partner's display name
   partnerHere: false, // is the partner currently connected?
   reconnectDelay: 1000, // backoff (ms), grows on repeated failures, caps at 30s
   // The room's latest media state — the "where should I be?" answer.
@@ -40,12 +42,17 @@ const state = {
 
 // ---- persistence (survive worker death) ----
 
-/** Save the current room + tab so a restarted worker can auto-rejoin. */
+/** Save the current room + tab + name so a restarted worker can auto-rejoin. */
 function persist() {
-  chrome.storage.local.set({ pawse_room: state.room, pawse_tab: state.syncTabId });
+  chrome.storage.local.set({
+    pawse_room: state.room,
+    pawse_tab: state.syncTabId,
+    pawse_name: state.myName,
+  });
 }
 
-/** Forget the room (on explicit Leave), so we don't auto-rejoin next start. */
+/** Forget the room (on explicit Leave), so we don't auto-rejoin next start.
+ *  Keeps the name so it's remembered for next time. */
 function clearPersist() {
   chrome.storage.local.remove(["pawse_room", "pawse_tab"]);
 }
@@ -120,6 +127,8 @@ function handleServerMessage(msg) {
     case "room": // we successfully created/joined/rejoined
       state.room = msg.room;
       state.role = msg.role;
+      if (typeof msg.partnerHere === "boolean") state.partnerHere = msg.partnerHere;
+      if (msg.partnerName) state.partnerName = msg.partnerName;
       persist();
       if (msg.hostState) {
         state.media = {
@@ -150,6 +159,7 @@ function handleServerMessage(msg) {
 
     case "presence": // partner joined/left
       state.partnerHere = msg.event === "joined";
+      if (msg.name) state.partnerName = msg.name;
       notifyPopup({ presence: msg.event });
       break;
 
@@ -187,6 +197,8 @@ function notifyPopup(extra = {}) {
       connected: state.connected,
       room: state.room,
       role: state.role,
+      myName: state.myName,
+      partnerName: state.partnerName,
       partnerHere: state.partnerHere,
       ...extra,
     })
@@ -197,21 +209,38 @@ function notifyPopup(extra = {}) {
  * Single entry point for messages from BOTH the popup and the content script.
  * We distinguish them by `cmd`. Returns true to keep the async response open.
  */
-chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   (async () => {
     switch (msg.cmd) {
       // ---- from popup ----
       case "CREATE":
         state.syncTabId = msg.tabId;
+        state.myName = msg.name || "Guest";
         await connect();
-        sendToServer("create");
+        sendToServer("create", { name: state.myName });
+        persist();
         sendResponse({ ok: true });
         break;
 
       case "JOIN":
         state.syncTabId = msg.tabId;
+        state.myName = msg.name || "Guest";
         await connect();
-        sendToServer("join", { room: msg.room });
+        sendToServer("join", { room: msg.room, name: state.myName });
+        persist();
+        sendResponse({ ok: true });
+        break;
+
+      // ---- from content script: partner opened a #pawse=CODE share link ----
+      case "AUTOJOIN":
+        if (state.room === msg.room) {
+          sendResponse({ ok: true });
+          break;
+        }
+        state.syncTabId = sender?.tab?.id ?? state.syncTabId;
+        await connect();
+        sendToServer("join", { room: msg.room, name: state.myName });
+        persist();
         sendResponse({ ok: true });
         break;
 
@@ -220,6 +249,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         state.room = null;
         state.role = null;
         state.partnerHere = false;
+        state.partnerName = null;
         clearPersist();
         notifyPopup();
         sendResponse({ ok: true });
@@ -230,6 +260,8 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           connected: state.connected,
           room: state.room,
           role: state.role,
+          myName: state.myName,
+          partnerName: state.partnerName,
           partnerHere: state.partnerHere,
         });
         break;
@@ -258,7 +290,10 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         break;
 
       case "REQUEST_SYNC": // a freshly-loaded tab asks where it should be
-        sendToContent({ cmd: "SYNC_STATE", media: state.media });
+        // Only answer if we're actually in a room; otherwise the "room" message
+        // (after join completes) will push the real state. Prevents a transient
+        // seek-to-0 when a share-link tab asks before its join round-trip lands.
+        if (state.room) sendToContent({ cmd: "SYNC_STATE", media: state.media });
         break;
     }
   })();
@@ -267,13 +302,14 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
 // ---- startup: revive a session if the worker was restarted ----
 (async () => {
-  const saved = await chrome.storage.local.get(["pawse_room", "pawse_tab"]);
+  const saved = await chrome.storage.local.get(["pawse_room", "pawse_tab", "pawse_name"]);
+  if (saved.pawse_name) state.myName = saved.pawse_name;
   if (saved.pawse_room) {
     state.room = saved.pawse_room;
     state.syncTabId = saved.pawse_tab ?? null;
     try {
       await connect();
-      sendToServer("join", { room: state.room }); // silently rejoin
+      sendToServer("join", { room: state.room, name: state.myName }); // silently rejoin
     } catch {
       scheduleReconnect();
     }

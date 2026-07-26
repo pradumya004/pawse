@@ -26,7 +26,17 @@
 
 ## Current position
 
-- **Phase 2 core + full robustness pass done in code.** Awaiting user's in-Chrome test.
+- **Sync VERIFIED in Chrome** (both windows synced on same video ✅). Then this follow-up pass (UNTESTED — user testing next):
+  - **Presence bug FIXED**: joiner now learns the host is already there (server sends `partnerHere` + `partnerName` in the ROOM reply). Was one-way before.
+  - **Usernames**: lobby has a name field; name rides create/join/presence; popup shows "<name> is watching with you".
+  - **Share/invite LINK**: Create → "COPY INVITE LINK" copies `youtube.com/watch?v=…#pawse=CODE`; partner pastes it → content script auto-joins (`AUTOJOIN`) + follows the video. One click.
+  - **UI redesign**: lobby↔room views cleanly toggle (create/join hidden in room); hand-built **SVG pixel cat** (blinks + bobs) replacing emoji; better copy; name field; hint text.
+- **Bugs found & fixed this pass:**
+  1. `.hidden` lost to `#room {display:flex}` (ID > class specificity) → LEAVE showed in lobby. Fixed with `display:none !important` + explicit `setView(false)` on open.
+  2. `REQUEST_SYNC` replied when not yet in a room → transient seek-to-0 on share-link tabs. Now guarded by `state.room`.
+  3. Incognito default "spanning" would SHARE one background/state between normal+incognito windows (breaks 2-peer test + privacy). Added `"incognito": "split"`.
+- **Known non-bugs to expect in test:** (a) browser autoplay policy may keep the partner's video paused until they click it once; (b) verify YouTube doesn't strip the `#pawse=` hash on load.
+- **▶ NEXT STEP:** RESTART server (or confirm --watch reloaded), **REMOVE + re-add the extension** (incognito change needs full reload, and enable "Allow in incognito"), refresh both YT tabs, test. Then commit.
 - **What Phase 2 now includes:**
   - Play/pause/seek sync (echo-suppressed) ✅ tested
   - **Video-follow**: room tracks `videoId`; host switches video → partner auto-navigates & re-syncs (media cache + `REQUEST_SYNC` on every load; self-heals nav/refresh)

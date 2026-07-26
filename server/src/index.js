@@ -94,9 +94,22 @@ wss.on("connection", (ws) => {
     const room = leaveClient(ws.roomCode, ws.id);
     // Tell the remaining partner they're now alone.
     if (room)
-      broadcast(room, MSG.PRESENCE, { event: "left", id: ws.id }, ws.id);
+      broadcast(room, MSG.PRESENCE, { event: "left", id: ws.id, name: ws.name }, ws.id);
   });
 });
+
+/**
+ * Find the display name of the OTHER person in a room (the partner).
+ * @param {object} room
+ * @param {string} selfId - the id to exclude
+ * @returns {string|null}
+ */
+function partnerNameOf(room, selfId) {
+  for (const [id, client] of room.clients) {
+    if (id !== selfId) return client.ws.name || "Guest";
+  }
+  return null;
+}
 
 /**
  * Route one parsed message to the right action based on msg.type.
@@ -107,9 +120,10 @@ function handle(ws, msg) {
   switch (msg.type) {
     // "Make a new room, I'm the host."
     case MSG.CREATE: {
+      ws.name = msg.name || "Guest";
       const room = createRoom(ws.id, ws);
       ws.roomCode = room.code;
-      send(ws, MSG.ROOM, { room: room.code, role: "host" });
+      send(ws, MSG.ROOM, { room: room.code, role: "host", partnerHere: false });
       break;
     }
 
@@ -120,19 +134,27 @@ function handle(ws, msg) {
         send(ws, MSG.ERROR, { reason: "no_such_room" });
         return;
       }
+      ws.name = msg.name || "Guest";
       joinRoom(room, ws.id, ws);
       ws.roomCode = room.code;
       const role = room.hostId === ws.id ? "host" : "follower";
-      // Hand the joiner the current playback state so they start in sync.
-      send(ws, MSG.ROOM, { room: room.code, role, hostState: room.state });
-      broadcast(room, MSG.PRESENCE, { event: "joined", id: ws.id }, ws.id);
+      // Hand the joiner the current playback state AND tell them the partner is
+      // already here (the fix: the joiner previously never learned this).
+      send(ws, MSG.ROOM, {
+        room: room.code,
+        role,
+        hostState: room.state,
+        partnerHere: room.clients.size > 1,
+        partnerName: partnerNameOf(room, ws.id),
+      });
+      broadcast(room, MSG.PRESENCE, { event: "joined", id: ws.id, name: ws.name }, ws.id);
       break;
     }
 
     // "Remove me from the room" (explicit Leave — socket stays open for reuse).
     case MSG.LEAVE: {
       const room = leaveClient(ws.roomCode, ws.id);
-      if (room) broadcast(room, MSG.PRESENCE, { event: "left", id: ws.id }, ws.id);
+      if (room) broadcast(room, MSG.PRESENCE, { event: "left", id: ws.id, name: ws.name }, ws.id);
       ws.roomCode = null;
       break;
     }

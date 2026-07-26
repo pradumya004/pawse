@@ -256,13 +256,24 @@ chrome.runtime.onMessage.addListener((msg) => {
   }
 });
 
+/**
+ * If this page was opened from a Pawse share link (…#pawse=CODE), auto-join
+ * that room. Runs once on load; the hash is dropped on later navigations.
+ */
+function maybeAutoJoin() {
+  const m = location.hash.match(/pawse=([A-Za-z0-9]+)/);
+  if (m) safeSend({ cmd: "AUTOJOIN", room: m[1].toUpperCase() });
+}
+
 // Poll: keep the <video> reference fresh AND detect user-driven video changes.
 setInterval(() => {
   findVideo();
   reportVideoIfChanged();
 }, 1000);
 
-// On (re)load, note our video and ask the background where we should be.
+// On (re)load, note our video, auto-join if this is a share link, and ask the
+// background where we should be.
 currentVideoId = getVideoId();
 findVideo();
+maybeAutoJoin();
 safeSend({ cmd: "REQUEST_SYNC" });

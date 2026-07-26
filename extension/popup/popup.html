@@ -1,8 +1,9 @@
 <!--
   popup/popup.html
   The panel that opens when you click the Pawse toolbar icon.
-  Pixel-cat themed (see docs/DESIGN.md). Structure only — logic in popup.js,
-  look in popup.css. Loads config.js so popup.js can read PAWSE_CONFIG.
+  Two views inside one panel — #lobby (pick name, create/join) and #room
+  (share link, partner presence, leave). popup.js toggles between them.
+  Pixel-cat themed (see docs/DESIGN.md). Loads config.js for PAWSE_CONFIG.
 -->
 <!doctype html>
 <html lang="en">
@@ -11,42 +12,81 @@
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
-    <!-- CRT scanline overlay for retro feel -->
     <div class="scanlines" aria-hidden="true"></div>
 
     <div class="wrap">
       <!-- Mascot + wordmark -->
       <div class="header">
-        <div class="cat" id="cat">🐱</div>
+        <svg class="cat" viewBox="0 0 20 18" shape-rendering="crispEdges" aria-hidden="true">
+          <!-- ears -->
+          <rect x="4" y="2" width="2" height="1" fill="#ef7d1a" />
+          <rect x="3" y="3" width="4" height="1" fill="#ef7d1a" />
+          <rect x="14" y="2" width="2" height="1" fill="#ef7d1a" />
+          <rect x="13" y="3" width="4" height="1" fill="#ef7d1a" />
+          <rect x="4" y="3" width="1" height="1" fill="#e85d86" />
+          <rect x="15" y="3" width="1" height="1" fill="#e85d86" />
+          <!-- head -->
+          <rect x="3" y="4" width="14" height="11" fill="#ef7d1a" />
+          <!-- forehead stripes -->
+          <rect x="7" y="4" width="1" height="2" fill="#d9660a" />
+          <rect x="10" y="4" width="1" height="2" fill="#d9660a" />
+          <rect x="12" y="4" width="1" height="2" fill="#d9660a" />
+          <!-- eyes -->
+          <rect x="6" y="8" width="2" height="3" fill="#2a2438" />
+          <rect x="12" y="8" width="2" height="3" fill="#2a2438" />
+          <rect x="6" y="8" width="1" height="1" fill="#fff" />
+          <rect x="12" y="8" width="1" height="1" fill="#fff" />
+          <!-- eyelids (blink) -->
+          <rect class="lid" x="6" y="8" width="2" height="3" fill="#ef7d1a" />
+          <rect class="lid" x="12" y="8" width="2" height="3" fill="#ef7d1a" />
+          <!-- nose + mouth -->
+          <rect x="9" y="11" width="2" height="1" fill="#e85d86" />
+          <rect x="8" y="12" width="1" height="1" fill="#2a2438" />
+          <rect x="11" y="12" width="1" height="1" fill="#2a2438" />
+          <!-- whiskers -->
+          <rect x="0" y="8" width="3" height="1" fill="#2a2438" />
+          <rect x="0" y="10" width="3" height="1" fill="#2a2438" />
+          <rect x="17" y="8" width="3" height="1" fill="#2a2438" />
+          <rect x="17" y="10" width="3" height="1" fill="#2a2438" />
+        </svg>
         <h1 class="logo">PAWSE</h1>
       </div>
 
       <div id="status" class="status">
-        <span class="dot" id="dot"></span><span id="statusText">OFFLINE</span>
+        <span class="dot" id="dot"></span><span id="statusText">NOT IN A ROOM</span>
       </div>
 
-      <button id="createBtn" class="btn primary">CREATE ROOM</button>
+      <!-- ============ LOBBY ============ -->
+      <div id="lobby">
+        <label class="label" for="nameInput">WHO ARE YOU?</label>
+        <input id="nameInput" class="input name" placeholder="your name" maxlength="12" />
 
-      <div class="divider"><span>OR</span></div>
+        <button id="createBtn" class="btn primary">START A ROOM</button>
 
-      <div class="join">
-        <input id="roomInput" class="input" placeholder="CODE" maxlength="6" />
-        <button id="joinBtn" class="btn">JOIN</button>
+        <div class="divider"><span>OR JOIN A FRIEND</span></div>
+
+        <div class="join">
+          <input id="roomInput" class="input" placeholder="ROOM CODE" maxlength="6" />
+          <button id="joinBtn" class="btn">JOIN</button>
+        </div>
       </div>
 
-      <div id="roomBox" class="room hidden">
-        <span class="label">ROOM</span>
-        <span id="roomCode" class="code">------</span>
-        <button id="copyBtn" class="btn small">COPY</button>
-      </div>
+      <!-- ============ ROOM ============ -->
+      <div id="room" class="hidden">
+        <div class="room">
+          <span class="label">ROOM</span>
+          <span id="roomCode" class="code">------</span>
+        </div>
 
-      <!-- partner presence (only shown while in a room) -->
-      <div id="partnerBox" class="partner hidden">
-        <span class="pcat">🐱</span><span id="partnerText">waiting for partner...</span>
-      </div>
+        <button id="copyBtn" class="btn primary">📋 COPY INVITE LINK</button>
+        <div class="hint">send it to your partner — one click puts them right here</div>
 
-      <!-- leave (only shown while in a room) -->
-      <button id="leaveBtn" class="btn leave hidden">LEAVE ROOM</button>
+        <div id="partnerBox" class="partner">
+          <span class="pcat">🐾</span><span id="partnerText">waiting for your partner...</span>
+        </div>
+
+        <button id="leaveBtn" class="btn leave">LEAVE ROOM</button>
+      </div>
 
       <div class="footer">watch together<br />purr-fectly in sync</div>
     </div>
