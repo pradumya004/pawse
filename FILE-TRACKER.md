@@ -2,14 +2,30 @@
 
 > **Purpose:** the single map of what exists, what doesn't, and where we are — so work can resume cleanly even after Claude's context resets. **Update this every time a file is created, renamed, or its purpose changes.**
 
+> **GitHub:** https://github.com/pradumya004/pawse (private). Commit author: `pradumya.official@gmail.com`. Account: `pradumya004`.
+>
+> **⚙️ AUTO-PUSH RULE (standing authorization):** at the end of every phase, automatically `git add . && git commit && git push` — no need to ask. Commit message format: `Phase N: <summary>`.
+
 **Legend:** ✅ done · 🚧 in progress · ⬜ planned (not created yet)
 
 ---
 
+## Timeline
+
+| Phase | Status | Committed & pushed |
+|---|---|---|
+| 0 — Foundations / docs | ✅ done | ✅ |
+| 1 — Sync relay server | ✅ **COMPLETE & VERIFIED** | ✅ `Phase 1: sync relay server + project docs` |
+| 2 — Extension (Track A, YouTube) | 🚧 starting | ⬜ |
+| 3 — Own-files P2P (Track B) | ⬜ | ⬜ |
+| 4 — DRM adapters | ⬜ | ⬜ |
+| 5 — Together layer (cam/chat) | ⬜ | ⬜ |
+| 6 — Polish | ⬜ | ⬜ |
+
 ## Current position
 
-- **Phase:** 1 — Sync Relay Server ✅ **COMPLETE & VERIFIED** (two-terminal test passed: a `play` from the host relayed to the follower only, tagged `from` host id).
-- **▶ NEXT:** Phase 2 — Track A browser extension (MV3), YouTube first. Develop against `ws://localhost:8080`.
+- **Phase 1 verified:** two-terminal test passed — a `play` from the host relayed to the follower only, tagged `from` host id.
+- **▶ NEXT FILE:** `extension/background.js` (the WebSocket brain). Then `content/content.js`, then popup files. Develop against `ws://localhost:8080`.
 - **Deferred (add when needed):** clock-sync ping/pong (1.5), rejoin grace window, free-tier deploy of the relay (needed before a real test with a remote partner).
 
 **Working style:** user writes all code himself, one file at a time; I explain + provide content, he creates it. Every function gets a JSDoc comment.
