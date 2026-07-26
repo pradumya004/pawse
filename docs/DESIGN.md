@@ -14,23 +14,25 @@
 
 ---
 
-## 2. Palette (cozy dark, cat-friendly)
+## 2. Palette — "Cream & Ginger" (current, shipped in popup)
 
-Dark by default (movie nights are dark) with warm cat tones.
+**Decision (locked):** we went with a **light, warm "paper / sticker-book"** palette, NOT dark purple. The earlier dark-purple-with-neon look read as generic "AI SaaS" and was rejected. Cream & ginger is warm, physical, cozy, and unmistakably not-a-dashboard — the strongest anti-AI direction. Light also suits the pixel-cat sticker vibe.
 
 | Token | Hex | Use |
 |---|---|---|
-| `--bg-void` | `#12101a` | App background (deep night purple) |
-| `--bg-panel` | `#1e1b2e` | Cards, sidebar |
-| `--ink` | `#f4ecd8` | Primary text (warm cream) |
-| `--cat-orange` | `#ff9f43` | Primary accent (ginger cat) |
-| `--cat-pink` | `#ff6b9d` | Kitty accent (hearts, reactions) |
-| `--paw-purple` | `#a55eea` | Secondary accent, links |
-| `--mint-glow` | `#2ecc71` | "In sync" / success |
-| `--alert-red` | `#ff5e57` | Buffering / disconnect |
-| `--pixel-black` | `#0a0812` | Hard borders & shadows |
+| `--bg` | `#f4ecd8` | App background (warm cream / paper) |
+| `--panel` | `#e7dabc` | Insets, cards, dashed boxes |
+| `--ink` | `#2a2438` | Primary text + hard borders (charcoal) |
+| `--ink-soft` | `#7a6f5d` | Muted labels, footers |
+| `--ginger` | `#ef7d1a` | Primary accent (ginger cat) — Create btn, room code, focus |
+| `--pink` | `#e85d86` | Kitty accent — partner presence, hearts, Leave btn |
+| `--live` | `#3a9d4a` | Connected / "in sync" dot |
+| `--off` | `#d9463f` | Offline / disconnect dot |
+| pure white | `#ffffff` | Input + code field fills (pop against cream) |
 
-Optional **light theme** ("daytime cat") swaps `--bg-void`→`#f8f0e3`, `--ink`→`#2a2438`. Theme-aware via `prefers-color-scheme`.
+Shadows are offset charcoal at low alpha (`4px 4px 0 rgba(42,36,56,.4)`), never blurred. Scanlines are subtle **dark** lines over the light bg.
+
+**Optional dark theme later** ("movie-night mode") can invert to a warm dark (charcoal bg, cream ink) for actual dark viewing — theme-aware via `prefers-color-scheme`. Not built yet.
 
 ---
 
@@ -46,8 +48,10 @@ Optional **light theme** ("daytime cat") swaps `--bg-void`→`#f8f0e3`, `--ink`�
 ## 4. The mascot — "Pixel & Kitty"
 
 Two pixel cats, one per partner:
-- **Pixel** (ginger, `--cat-orange`) = you / host.
-- **Kitty** (calico-pink, `--cat-pink`) = your girlfriend / partner.
+- **Pixel** (ginger, `--ginger`) = you / host.
+- **Kitty** (calico-pink, `--pink`) = your girlfriend / partner.
+
+**Currently shipped:** the popup uses a 🐱 emoji mascot with a stepped "bob" animation as a placeholder. Replacing it with a real 16×16 pixel-art cat sprite sheet is a polish TODO.
 
 Mascot states (16×16 or 32×32 sprite sheets, `steps()` animation):
 

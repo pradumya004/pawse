@@ -23,9 +23,12 @@ export const MSG = {
   // ---- client -> server ----
   CREATE: "create", // "make a new room, I'm the host"
   JOIN: "join", // "join this room by code"
+  LEAVE: "leave", // "remove me from the room" (keeps the socket open)
 
   // ---- relayed to the OTHER peer (bidirectional) ----
   CONTROL: "control", // playback command: play / pause / seek / rate
+  VIDEO: "video", // "I switched to this video" — partner follows (non-DRM only)
+  BUFFER: "buffer", // "I stalled / I recovered" — makes both sides wait together
   CHAT: "chat", // text message or reaction
 };
 

@@ -34,38 +34,42 @@ Both modes reuse the **same relay (Phase 1), same protocol, same drift engine.**
 
 ---
 
-## Phase 1 — Sync Relay Server (Day 2–4) ← the spine
+## Phase 1 — Sync Relay Server (Day 2–4) ← the spine ✅ DONE
 
 **Goal:** rooms + broadcast. Everything else plugs into this.
 
-| # | Task | Notes |
-|---|------|-------|
-| 1.1 | WebSocket server (`ws` on Node) | No DB. Rooms live in memory — fine for 2 users |
-| 1.2 | Room lifecycle | `create` → 6-char share code → `join` → destroy when empty (grace timer for refreshes) |
-| 1.3 | Roles | First joiner = **host** (source of truth). Host migration if host disconnects |
-| 1.4 | Broadcast control events | Relay `{action, mediaTime, sentAt}` to all room peers |
-| 1.5 | Clock sync | Ping/pong RTT measurement so clients can compensate latency when applying a seek |
-| 1.6 | Heartbeat / presence | Detect dead sockets, notify partner "she disconnected" |
-| 1.7 | Free-tier cold-start handling | Render free tier sleeps; client shows "waking server…" and retries with backoff |
+| # | Task | Status | Notes |
+|---|------|--------|-------|
+| 1.1 | WebSocket server (`ws` on Node) | ✅ | No DB. Rooms live in memory — fine for 2 users. `server/src/index.js` |
+| 1.2 | Room lifecycle | ✅ | `create` → 6-char share code → `join`. **Grace window (2 min)** on empty so refresh/blip can rejoin same code. `server/src/rooms.js` |
+| 1.3 | Roles | ✅ | First joiner = **host** (source of truth). Host migration if host disconnects |
+| 1.4 | Broadcast control events | ✅ | Relay `{action, mediaTime, sentAt}` to the OTHER peer (never echo to sender) |
+| 1.5 | Clock sync | ⬜ deferred | Ping/pong RTT compensation for seeks — good-enough without it for now |
+| 1.6 | Heartbeat / presence | ✅ | 30s ping reaps dead sockets; `presence joined/left` relayed |
+| 1.7 | Free-tier cold-start handling | ⬜ deferred | Needed at deploy time (Phase 6) |
 
-**Exit criteria:** two browser tabs joined to one room echo play/pause to each other in <200 ms.
+**Exit criteria:** ✅ two clients echo play/pause via one room (verified with `scripts/test-client.js`).
 
 ---
 
-## Phase 2 — Track A / Mode A: Browser Extension, YouTube first (Week 1–2)
+## Phase 2 — Track A / Mode A: Browser Extension, YouTube first (Week 1–2) ✅ CORE DONE
 
 **Goal:** the Teleparty-killer, proven on the easiest (DRM-free) platform. YouTube needs **no account** either side; the same extension later handles DRM platforms where **both** log in.
 
-| # | Task | Notes |
-|---|------|-------|
-| 2.1 | MV3 extension scaffold | Popup UI (create/join room), background service worker (owns the WS), content script (owns the `<video>`) |
-| 2.2 | Video adapter: generic `HTMLMediaElement` | Listen `play/pause/seeking`, command `.play()/.pause()/.currentTime=` |
-| 2.3 | **Echo suppression** | The #1 sync bug: applying a remote event fires local events → infinite loop. Tag programmatic actions and swallow them |
-| 2.4 | Drift correction loop | Every 5 s compare timestamps; drift > 1 s → soft-seek the follower; > 0.3 s → nudge `playbackRate` (1.05×/0.95×) so no visible jump |
-| 2.5 | YouTube adapter | Handle ads (pause sync during ads), SPA navigation (video element replaced without page load) |
-| 2.6 | Share link flow | `Create room` → copies `youtube.com/watch?v=…#wp=ROOMCODE` → her extension auto-joins |
+| # | Task | Status | Notes |
+|---|------|--------|-------|
+| 2.1 | MV3 extension scaffold | ✅ | Popup (create/join/leave), background SW (owns WS + media cache), content script (owns `<video>`). `config.js` centralizes the relay URL |
+| 2.2 | Video adapter: generic `HTMLMediaElement` | ✅ | Listen `play/pause/seeked`, command `.play()/.pause()/.currentTime=` |
+| 2.3 | **Echo suppression** | ✅ | `suppress` flag swallows the local events a remote command triggers |
+| 2.4 | Drift correction loop | ⬜ deferred | playbackRate nudge — sync is good-enough without it; revisit if drift shows |
+| 2.5 | YouTube adapter | ✅ (SPA nav) | Follows SPA video swaps via polling; **ad-pause handling still TODO** |
+| 2.6 | Share link flow (auto-join) | ⬜ deferred | `#pawse=CODE` one-click join — planned next |
+| 2.7 | **Video-follow sync** (NEW) | ✅ | Room tracks `videoId`; host switches video → partner's tab auto-navigates & re-syncs. Surfaced from real use, not original spec |
+| 2.8 | **Buffer-aware sync** (NEW) | ✅ | `waiting`/`playing` events → partner auto-pauses & both resume together |
+| 2.9 | **Robustness pass** (NEW) | ✅ | Persist room to `chrome.storage` + auto-rejoin on worker restart; reconnect-with-backoff; server grace window; **Leave Room** button; partner presence in popup; orphaned-context hardening (`safeSend`) |
+| 2.10 | **Pixel-cat UI** | ✅ | "Cream & Ginger" theme, CRT scanlines, depress buttons, bundled Press Start 2P. See DESIGN.md |
 
-**Exit criteria:** you and your girlfriend watch a full YouTube video, either can pause/seek, drift never exceeds 1 s.
+**Exit criteria:** ✅ two windows watch a YouTube video in sync; either can pause/seek/switch-video; buffering makes the other wait; refresh/leave handled. **Remaining before "ship-ready": ad-pause handling, auto-join link.**
 
 ---
 
@@ -149,11 +153,38 @@ Live-streaming native quality in real time only stays smooth if **host upload sp
 
 ## Phase 6 — Polish & Hardening (ongoing)
 
-- Reconnect resume (refresh mid-movie → rejoin at same timestamp)
-- Buffer-aware sync (follower buffering → auto-pause host, auto-resume)
+- ✅ Reconnect resume (refresh mid-movie → rejoin at same timestamp) — *done in Phase 2 robustness pass*
+- ✅ Buffer-aware sync (follower buffering → auto-pause partner, auto-resume) — *done in Phase 2*
+- Free-tier deploy of the relay + cold-start "waking server…" UX (needed for real remote testing with Kitty)
+- Ad-pause handling (YouTube/DRM: pause sync during ad breaks, re-sync after)
+- Auto-join share link (`#pawse=CODE`)
 - Room passwords (it's just for you two)
-- Extension packaging (load-unpacked for both of you; Chrome Web Store optional later)
+- Extension packaging + Chrome Web Store listing
 - Metrics overlay (RTT, drift, buffer) for debugging across her network vs yours
+
+---
+
+## Phase 7 — Monetization (after the free plan is fully functional)
+
+**Principle:** the free plan (room of 2, YouTube + own-files sync, cam/chat) stays free **forever** — that's the origin story and the top-of-funnel. Money comes from *groups, power features, and cosmetics*. Keep prices low and regional (India-first, PPP-adjusted). See **[MONETIZATION.md](docs/MONETIZATION.md)** for the full plan, pricing, and conversion tactics.
+
+| # | Task | Notes |
+|---|------|-------|
+| 7.1 | Accounts + billing spine | This is where a **DB finally enters** (Postgres/Mongo): users, plans, entitlements. Payments via Razorpay (India) + Stripe (intl) |
+| 7.2 | Plan gating | Feature flags read from entitlements; free vs Plus vs Pro vs Lifetime |
+| 7.3 | Paywall & upsell surfaces | In-popup upsell at the moment of friction (see MONETIZATION.md conversion tactics) |
+| 7.4 | Cosmetics store | Cat sprite packs, themes, reaction packs — pure-margin, no infra cost |
+
+**Exit criteria:** a user can upgrade in < 30 s and immediately unlock a gated feature.
+
+---
+
+## Phase 8 — Native App & Store Distribution (far future — noted, not scheduled)
+
+- Wrap the player as a desktop app (Electron/Tauri) and/or mobile (Capacitor/React Native) for own-files mode outside the browser.
+- Publish: Chrome Web Store (extension), Microsoft Store / Mac App Store (desktop), Play Store / App Store (mobile).
+- All legal: own-files + user's own accounts only; no bundled content, no DRM circumvention.
+- **Just tracked for now.** Don't build until the web/extension product has real users.
 
 ---
 
@@ -161,12 +192,14 @@ Live-streaming native quality in real time only stays smooth if **host upload sp
 
 ```mermaid
 graph LR
-    P0[Phase 0<br/>Foundations] --> P1[Phase 1<br/>Sync Relay]
-    P1 --> P2[Phase 2<br/>Extension: YouTube]
+    P0[Phase 0<br/>Foundations ✅] --> P1[Phase 1<br/>Sync Relay ✅]
+    P1 --> P2[Phase 2<br/>Extension: YouTube ✅ core]
     P1 --> P3[Phase 3<br/>Own-Files P2P]
     P2 --> P4[Phase 4<br/>Netflix / Prime / Hotstar]
     P2 --> P5[Phase 5<br/>Chat · Voice · Reactions]
     P3 --> P5
-    P4 --> P6[Phase 6<br/>Polish]
+    P4 --> P6[Phase 6<br/>Polish + Deploy]
     P5 --> P6
+    P6 --> P7[Phase 7<br/>Monetization]
+    P7 --> P8[Phase 8<br/>Native Apps]
 ```

@@ -1,0 +1,305 @@
+/*
+  popup/popup.css — Pawse pixel-cat theme :: "Cream & Ginger"
+
+  Warm cream "sticker-book" background, charcoal ink, one ginger-cat accent.
+  Real 8-bit look with pure CSS: hard stepped borders, offset (never blurred)
+  shadows, blocky buttons that physically depress on press, subtle CRT
+  scanlines, pixel-crisp rendering, and the bundled Press Start 2P font.
+
+  Sizing rule (learned the hard way): Press Start 2P renders ~2x wider than a
+  normal monospace, so EVERY element is width-capped (width:100%, min-width:0 on
+  flex children, wrapping footer) to guarantee no horizontal overflow.
+*/
+
+@font-face {
+  font-family: "PressStart";
+  src: url("fonts/PressStart2P.ttf") format("truetype");
+  font-display: swap;
+}
+
+:root {
+  --bg: #f4ecd8; /* warm cream (paper) */
+  --panel: #e7dabc; /* darker cream for insets */
+  --ink: #2a2438; /* charcoal text + borders */
+  --ink-soft: #7a6f5d; /* muted labels */
+  --ginger: #ef7d1a; /* ginger-cat accent (primary) */
+  --pink: #e85d86; /* kitty accent (sparingly) */
+  --live: #3a9d4a; /* connected dot */
+  --off: #d9463f; /* offline dot */
+  --pixel-font: "PressStart", "Courier New", monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  image-rendering: pixelated; /* crisp, no anti-alias blur */
+}
+
+body {
+  position: relative;
+  width: 300px;
+  max-width: 300px;
+  overflow-x: hidden; /* never scroll sideways */
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--pixel-font);
+}
+
+/* --- subtle scanlines (dark on light) --- */
+.scanlines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(42, 36, 56, 0.045) 0px,
+    rgba(42, 36, 56, 0.045) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  z-index: 10;
+}
+
+.wrap {
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* --- header / mascot --- */
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.cat {
+  font-size: 40px;
+  line-height: 1;
+  filter: drop-shadow(3px 3px 0 rgba(42, 36, 56, 0.35));
+  animation: bob 1.2s steps(2) infinite; /* stepped = sprite-like, not smooth */
+}
+
+@keyframes bob {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.logo {
+  font-family: var(--pixel-font);
+  font-size: 18px;
+  letter-spacing: 1px;
+  color: var(--ginger);
+  text-shadow: 3px 3px 0 var(--ink);
+}
+
+/* --- status pill --- */
+.status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: var(--ink-soft);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  background: var(--off);
+  box-shadow: 2px 2px 0 var(--ink);
+}
+
+.dot.on {
+  background: var(--live);
+}
+
+/* --- buttons: full-width, blocky, hard shadow, depress on click --- */
+.btn {
+  width: 100%;
+  font-family: var(--pixel-font);
+  font-size: 9px;
+  line-height: 1.4;
+  letter-spacing: 1px;
+  padding: 11px 10px;
+  color: var(--bg);
+  background: var(--ink);
+  border: 3px solid var(--ink);
+  box-shadow: 4px 4px 0 rgba(42, 36, 56, 0.4);
+  cursor: pointer;
+}
+
+.btn:hover {
+  filter: brightness(1.08);
+}
+
+.btn:active {
+  transform: translate(4px, 4px); /* presses in */
+  box-shadow: 0 0 0 var(--ink);
+}
+
+.btn.primary {
+  background: var(--ginger);
+  color: var(--ink);
+}
+
+.btn.small {
+  width: auto;
+  flex-shrink: 0;
+  font-size: 8px;
+  padding: 7px 9px;
+  box-shadow: 3px 3px 0 rgba(42, 36, 56, 0.4);
+}
+
+.btn.small:active {
+  transform: translate(3px, 3px);
+}
+
+/* --- divider --- */
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  font-size: 8px;
+  color: var(--ink-soft);
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  height: 2px;
+  background: var(--panel);
+}
+
+.divider span {
+  padding: 0 8px;
+}
+
+/* --- join row --- */
+.join {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.input {
+  flex: 1;
+  min-width: 0; /* allows the input to shrink instead of overflowing the row */
+  font-family: var(--pixel-font);
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-align: center;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: #fff;
+  border: 3px solid var(--ink);
+  padding: 8px 6px;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--ginger);
+}
+
+.input::placeholder {
+  color: #b8ac92;
+}
+
+.join .btn {
+  width: auto;
+  flex-shrink: 0;
+}
+
+/* --- room code box --- */
+.room {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  background: #fff;
+  border: 3px solid var(--ginger);
+}
+
+.label {
+  font-size: 8px;
+  color: var(--ink-soft);
+  flex-shrink: 0;
+}
+
+.code {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--pixel-font);
+  font-size: 15px;
+  letter-spacing: 2px;
+  color: var(--ginger);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --- footer: wraps so wide font never overflows --- */
+/* --- partner presence --- */
+.partner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px;
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: var(--ink-soft);
+  background: var(--panel);
+  border: 2px dashed var(--ink-soft);
+}
+
+.partner.active {
+  color: var(--ink);
+  border: 2px solid var(--pink);
+  background: #fff;
+}
+
+.pcat {
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* --- leave button (danger, but on-theme) --- */
+.btn.leave {
+  background: #fff;
+  color: var(--pink);
+  border-color: var(--pink);
+  box-shadow: 4px 4px 0 rgba(232, 93, 134, 0.35);
+}
+
+.btn.leave:active {
+  box-shadow: 0 0 0;
+}
+
+.footer {
+  text-align: center;
+  font-size: 7px;
+  line-height: 1.8;
+  letter-spacing: 1px;
+  color: var(--ink-soft);
+  opacity: 0.8;
+  white-space: normal;
+  word-break: break-word;
+  margin-top: 2px;
+}
+
+.hidden {
+  display: none;
+}

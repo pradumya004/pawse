@@ -71,27 +71,35 @@ stateDiagram-v2
 
 ---
 
-## 3. WebSocket connection (every client)
+## 3. WebSocket connection + session (every client) — ✅ implemented in background.js
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Connecting
+    [*] --> Idle: worker start
+    Idle --> Connecting: create/join OR restored room from storage
     Connecting --> Open: onopen
     Connecting --> WakingServer: connect timeout (free-tier cold start)
     WakingServer --> Connecting: backoff retry (1s, 2s, 4s… cap 30s)
-    Open --> Syncing: joined room, clock-sync ping/pong ×5
-    Syncing --> Ready: RTT median computed
-    Ready --> Reconnecting: onclose / heartbeat miss
-    Reconnecting --> Connecting: retry
-    Ready --> Closed: user ends session
-    Closed --> [*]
+    Open --> InRoom: server confirms room (persisted to storage)
+    InRoom --> Reconnecting: onclose while still holding a room
+    Reconnecting --> Connecting: scheduleReconnect (backoff)
+    Connecting --> Rejoining: reconnected, send join(savedCode)
+    Rejoining --> InRoom: room still exists (within grace) → resync
+    Rejoining --> Ended: error no_such_room (grace expired) → clear storage
+    InRoom --> Ended: user clicks Leave (clear storage)
+    Ended --> Idle
+    Idle --> [*]
 
-    note right of Syncing
-        5 ping/pongs → median RTT.
-        Every applied remote seek adds rtt/2
-        to mediaTime compensation.
+    note right of Reconnecting
+        Room code lives in chrome.storage, so a
+        killed MV3 worker or a wifi blip
+        auto-reconnects and rejoins the SAME
+        room instead of dropping the session.
+        Server holds the room for a 2-min grace.
     end note
 ```
+
+> Clock-sync ping/pong (RTT compensation) is deferred — not yet in the machine above.
 
 ---
 

@@ -16,19 +16,28 @@
 |---|---|---|
 | 0 — Foundations / docs | ✅ done | ✅ |
 | 1 — Sync relay server | ✅ **COMPLETE & VERIFIED** | ✅ `Phase 1: sync relay server + project docs` |
-| 2 — Extension (Track A, YouTube) | 🚧 starting | ⬜ |
+| 2 — Extension (Track A, YouTube) | 🚧 core done + robustness pass; testing | ⬜ pending user's final test |
 | 3 — Own-files P2P (Track B) | ⬜ | ⬜ |
 | 4 — DRM adapters | ⬜ | ⬜ |
 | 5 — Together layer (cam/chat) | ⬜ | ⬜ |
-| 6 — Polish | ⬜ | ⬜ |
+| 6 — Polish + deploy | ⬜ | ⬜ |
+| 7 — Monetization (see docs/MONETIZATION.md) | ⬜ future | ⬜ |
+| 8 — Native apps / store distribution | ⬜ far future (tracked only) | ⬜ |
 
 ## Current position
 
-- **Phase 1 verified:** two-terminal test passed — a `play` from the host relayed to the follower only, tagged `from` host id.
-- **▶ NEXT FILE:** `extension/background.js` (the WebSocket brain). Then `content/content.js`, then popup files. Develop against `ws://localhost:8080`.
-- **Deferred (add when needed):** clock-sync ping/pong (1.5), rejoin grace window, free-tier deploy of the relay (needed before a real test with a remote partner).
+- **Phase 2 core + full robustness pass done in code.** Awaiting user's in-Chrome test.
+- **What Phase 2 now includes:**
+  - Play/pause/seek sync (echo-suppressed) ✅ tested
+  - **Video-follow**: room tracks `videoId`; host switches video → partner auto-navigates & re-syncs (media cache + `REQUEST_SYNC` on every load; self-heals nav/refresh)
+  - **Buffer-aware sync**: `waiting`/`playing` → partner auto-pauses, both resume together
+  - **Robustness pass**: persist room to `chrome.storage` + auto-rejoin on worker restart; reconnect-with-backoff; **server grace window (2 min)**; **Leave Room** button; **partner presence** in popup; `safeSend()` orphan hardening
+  - **Pixel-cat UI "Cream & Ginger"**: cream/charcoal/ginger (purple removed), CRT scanlines, depress buttons, bundled Press Start 2P, overflow fixed
+- **▶ NEXT STEP:** user reloads extension + refreshes both YT tabs, tests: (a) join auto-navigates partner to host's video, (b) host switching video pulls partner along, (c) buffering wait, (d) refresh keeps room, (e) Leave button, (f) UI look. Then **commit + push Phase 2**.
+- **⚠️ TEST RULE:** after every extension reload → refresh YT tabs → re-create room.
+- **Deferred to later phases:** ad-pause handling (YouTube ads desync), clock-sync ping/pong, drift correction (playbackRate nudge), share-link auto-join (`#pawse=CODE`), free-tier deploy + cold-start UX.
 
-**Working style:** user writes all code himself, one file at a time; I explain + provide content, he creates it. Every function gets a JSDoc comment.
+**Working style:** user writes code himself one file at a time (I explain + provide content) — EXCEPT he asked me to write Phase 2 files directly. Every function gets a JSDoc comment. Keep this tracker + memory updated. Auto-push each phase.
 
 ---
 
@@ -37,25 +46,37 @@
 ```
 pawse/
 ├── README.md                    ✅ product overview, two modes, quality/buffer guarantees
-├── ROADMAP.md                   ✅ phases 0–6, tasks, exit criteria
-├── FILE-TRACKER.md              ✅ this file
+├── ROADMAP.md                   ✅ phases 0–8 (incl. monetization), tasks, status
+├── FILE-TRACKER.md              ✅ this file — the resume anchor
 ├── docs/
 │   ├── WORKFLOW-TREE.md         ✅ horizontal feature tree + workflows
 │   ├── FLOW-DIAGRAM.md          ✅ sequence/flow diagrams (join, sync loop, P2P)
 │   ├── STATE-DIAGRAM.md         ✅ state machines (room, player, socket, webrtc)
-│   └── DESIGN.md                ✅ pixel-cat theme, palette, mascots, Meow Feed
+│   ├── DESIGN.md                ✅ pixel-cat theme (Cream & Ginger), mascots, Meow Feed
+│   └── MONETIZATION.md          ✅ tiers, pricing, conversion tactics (Phase 7, future)
 │
 ├── server/                      ✅ Phase 1 — sync relay (Node + ws, no DB) — VERIFIED
 │   ├── package.json             ✅ deps (ws), scripts (start/dev)
 │   ├── .gitignore               ✅
 │   ├── src/
-│   │   ├── protocol.js          ✅ MSG + ACTION constants (shared message vocab)
-│   │   ├── rooms.js             ✅ in-memory room registry, codes, host migration
-│   │   └── index.js             ✅ http /health + WebSocketServer + message routing + heartbeat
+│   │   ├── protocol.js          ✅ MSG + ACTION constants (incl. VIDEO, BUFFER, LEAVE)
+│   │   ├── rooms.js             ✅ in-memory rooms, codes, host migration, GRACE WINDOW
+│   │   └── index.js             ✅ /health + WS server + routing + heartbeat + leave
 │   └── scripts/
-│       └── test-client.js      ✅ CLI client to test create/join/broadcast without a browser
+│       └── test-client.js       ✅ CLI client to test create/join/broadcast
 │
-├── extension/                   ⬜ Phase 2 — Track A (MV3, YouTube first)
+├── extension/                   🚧 Phase 2 — Track A (MV3, YouTube) — code done, testing
+│   ├── manifest.json            ✅ MV3 blueprint; content_scripts=[config.js, content.js]
+│   ├── config.js                ✅ central config — RELAY_WS/RELAY_HTTP in ONE place
+│   ├── background.js            ✅ SW brain: WS + media cache + persist/reconnect/leave
+│   ├── content/
+│   │   └── content.js           ✅ owns <video>; echo-suppress; buffer + video-follow; safeSend
+│   └── popup/
+│       ├── popup.html           ✅ pixel UI: create/join/leave, room box, partner box
+│       ├── popup.js             ✅ create/join/leave wiring, presence + lobby/room views
+│       ├── popup.css            ✅ "Cream & Ginger" pixel theme, overflow-safe
+│       └── fonts/
+│           └── PressStart2P.ttf ✅ bundled 8-bit font (OFL)
 ├── player/                      ⬜ Phase 3 — Track B (own-files P2P player)
 └── shared/                      ⬜ later — theme tokens + protocol shared across clients
 ```
@@ -66,17 +87,24 @@ pawse/
 
 | File | Purpose | Notes |
 |---|---|---|
-| `server/src/protocol.js` | Message-type constants (`MSG`, `ACTION`) | The shared vocabulary; every client must use these exact strings |
-| `server/src/rooms.js` | Room lifecycle | In-memory `Map`; 6-char codes (no confusing chars); host migration + auto-destroy on empty |
-| `server/src/index.js` | Server entry | Owns the WS server, routes messages by type, relays control/chat to the *other* peer, heartbeat to drop dead sockets |
+| `server/src/protocol.js` | Message vocab (`MSG`, `ACTION`) | Shared strings. `MSG`: hello/room/presence/error, create/join/leave, control/video/buffer/chat |
+| `server/src/rooms.js` | Room lifecycle | In-memory `Map`; 6-char codes; host migration; **2-min grace window** before destroying empty rooms |
+| `server/src/index.js` | Server entry | WS server, routes by type, relays to the *other* peer, 30s heartbeat, leave handler |
+| `extension/config.js` | One place for the relay URL | Change here after deploy; loaded into all 3 extension worlds |
+| `extension/background.js` | The "brain" (service worker) | Owns WS; **media cache** {videoId, mediaTime, paused}; persists room to storage; auto-rejoin on restart; reconnect backoff |
+| `extension/content/content.js` | Owns the `<video>` | Echo suppression (`suppress`); buffer-aware (`waiting`/`playing`); video-follow (`getVideoId`/`navigateTo`); `safeSend` orphan guard |
+| `extension/popup/*` | Toolbar UI | Lobby (create/join) ↔ room view (code/partner/leave); pixel Cream & Ginger theme |
 
 ---
 
 ## Decisions locked (so we don't re-litigate)
 
-- **No DB for Phase 1.** Rooms live in memory; 2 users only. MongoDB/MERN enters only if/when we add accounts or watch-history.
-- **Node + `ws`**, ES modules (`"type": "module"`). **All files use `.js`** (not `.mjs`) for consistency — `"type": "module"` already makes every `.js` an ES module.
-- **Two modes:** A = DRM sync (both accounts), B = non-DRM P2P (one host). See README table.
-- **Quality:** Mode B transfers original file bytes (never re-encoded); pre-load for planned dates = zero buffering.
-- **No DRM circumvention** — out of scope permanently.
+- **No DB until Phase 7 (monetization).** Rooms are ephemeral in memory; 2 users. DB (Postgres/Mongo) enters only for accounts/subscriptions/entitlements.
+- **Node + `ws`**, ES modules. **All files `.js`** (not `.mjs`) — `"type": "module"` covers it.
+- **Two modes:** A = DRM sync (both accounts), B = non-DRM P2P (one host). See README.
+- **Quality:** Mode B transfers original file bytes (never re-encoded); pre-load = zero buffering.
+- **No DRM circumvention** — permanently out of scope.
+- **Monetization from day one (design-aware):** free plan (room of 2) free forever; gate groups/4K/cosmetics. Gate on **entitlement flags**, not plan names. See MONETIZATION.md.
+- **Internal vs wire messages:** UPPERCASE `cmd` = inside the extension; lowercase `type` = on the WebSocket wire.
 - **Mermaid rule:** no raw `"` `()` `{}` `|` inside node labels (breaks the parser).
+- **Testing rule:** reload extension → refresh YT tabs → re-create room (orphaned content scripts otherwise).

@@ -22,6 +22,10 @@ const rooms = new Map();
 const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 const CODE_LEN = 6;
 
+/** How long an empty room lingers before destruction, so a refresh or brief
+ *  network drop can rejoin the SAME code instead of the room vanishing. */
+const GRACE_MS = 120000; // 2 minutes
+
 /**
  * Generate a room code that isn't already in use.
  * Uses crypto.randomInt (not Math.random) so codes aren't predictable.
@@ -51,8 +55,9 @@ export function createRoom(hostId, ws) {
     hostId,
     clients: new Map([[hostId, { ws }]]),
     // Last known playback state. Handed to whoever joins next so a late joiner
-    // lands at the right timestamp instead of at 0:00.
+    // lands on the right video AND at the right timestamp.
     state: {
+      videoId: null, // which video the room is watching (YouTube id, etc.)
       action: "pause",
       mediaTime: 0,
       paused: true,
@@ -82,6 +87,11 @@ export function getRoom(code) {
  */
 export function joinRoom(room, clientId, ws) {
   room.clients.set(clientId, { ws });
+  // Someone's back — cancel any pending grace-period destruction.
+  if (room.destroyTimer) {
+    clearTimeout(room.destroyTimer);
+    room.destroyTimer = null;
+  }
   return room;
 }
 
@@ -104,9 +114,13 @@ export function leaveClient(code, clientId) {
     room.hostId = room.clients.keys().next().value || null;
   }
 
-  // Empty room -> free it.
+  // Empty room -> DON'T destroy immediately. Hold it for a grace period so an
+  // accidental refresh or a brief network drop can rejoin the same code. If
+  // someone rejoins (joinRoom), the timer is cancelled.
   if (room.clients.size === 0) {
-    rooms.delete(code);
+    if (!room.destroyTimer) {
+      room.destroyTimer = setTimeout(() => rooms.delete(code), GRACE_MS);
+    }
     return null;
   }
   return room;

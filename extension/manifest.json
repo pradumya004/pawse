@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "Pawse",
+  "version": "0.1.0",
+  "description": "Watch together, purr-fectly in sync.",
+
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "Pawse"
+  },
+
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/*"],
+      "js": ["config.js", "content/content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+
+  "permissions": ["storage", "tabs"],
+
+  "host_permissions": ["ws://localhost:8080/*", "http://localhost:8080/*"]
+}

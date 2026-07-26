@@ -43,19 +43,23 @@ pawse/
 
 | Doc | What's inside |
 |---|---|
-| [ROADMAP.md](ROADMAP.md) | Phases 0–6, tasks, exit criteria, build-order graph |
+| [ROADMAP.md](ROADMAP.md) | Phases 0–8, tasks, status, build-order graph |
+| [FILE-TRACKER.md](FILE-TRACKER.md) | Live map of every file + current position (the resume anchor) |
 | [docs/WORKFLOW-TREE.md](docs/WORKFLOW-TREE.md) | The horizontal feature tree — every capability, branching left→right |
 | [docs/FLOW-DIAGRAM.md](docs/FLOW-DIAGRAM.md) | Sequence/flow diagrams: join flow, sync loop, drift correction, P2P |
-| [docs/STATE-DIAGRAM.md](docs/STATE-DIAGRAM.md) | The 4 state machines that make sync bug-free |
+| [docs/STATE-DIAGRAM.md](docs/STATE-DIAGRAM.md) | The state machines that make sync bug-free |
+| [docs/DESIGN.md](docs/DESIGN.md) | Pixel-cat design system ("Cream & Ginger"), mascots, Meow Feed |
+| [docs/MONETIZATION.md](docs/MONETIZATION.md) | Tiers, pricing, conversion tactics (Phase 7 — future) |
 
 ## Principles
 
 1. **Sync events, not video.** Bytes, not gigabytes. Lag-free by construction.
 2. **Two honest modes.** DRM platforms = both accounts, sync-only (Mode A). Non-DRM = one host streams P2P, partner needs nothing (Mode B). No DRM circumvention, ever — because it doesn't work and it's not needed.
-3. **₹0 infrastructure.** Free-tier relay, static hosting, P2P media.
-4. **Two users is the spec.** No scaling architecture, no database, no auth service. A room is a shared secret between two people.
+3. **₹0 infrastructure (for the free plan).** Free-tier relay, static hosting, P2P media. Paid infra (TURN, DB) only arrives with revenue.
+4. **The core (room of 2) is free forever.** No scaling architecture or DB until monetization. A room is a shared secret between two people — and it always stays free.
 5. **QA = movie night.** A feature ships when it survives a full movie with her.
+6. **Built monetization-aware from day one.** Free-first, but every decision (feature flags, room-size limits) leaves room for paid tiers without a retrofit. See [MONETIZATION.md](docs/MONETIZATION.md).
 
-## If this ever becomes a product
+## The plan to make it a product
 
-The bones are already right: the relay is stateless-ish and cheap, rooms shard trivially, and the adapter registry is the moat (platforms churn their players; maintained adapters are what people would pay for). Monetization path when the time comes: free for rooms of 2 (forever — that's the origin story), paid for groups, themes (cat packs 🐱), and watch-history. But v1 is for two specific people.
+Free for rooms of 2 (forever — that's the origin story), paid for **groups, 4K own-files, cosmetics (cat packs 🐱), and power features**. The adapter registry is the moat: platforms churn their players, and maintained adapters are what people pay for. Prices stay cheap and India-first. Full tiers, pricing, and (honest, legal) conversion tactics live in **[docs/MONETIZATION.md](docs/MONETIZATION.md)**. But v1 is for two specific people — we perfect the free experience first.

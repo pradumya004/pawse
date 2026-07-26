@@ -129,16 +129,23 @@ function handle(ws, msg) {
       break;
     }
 
+    // "Remove me from the room" (explicit Leave — socket stays open for reuse).
+    case MSG.LEAVE: {
+      const room = leaveClient(ws.roomCode, ws.id);
+      if (room) broadcast(room, MSG.PRESENCE, { event: "left", id: ws.id }, ws.id);
+      ws.roomCode = null;
+      break;
+    }
+
     // Playback command: remember it, then relay to the partner.
+    // We MUTATE fields (not replace room.state) so videoId is preserved.
     case MSG.CONTROL: {
       const room = getRoom(ws.roomCode);
       if (!room) return;
-      room.state = {
-        action: msg.action,
-        mediaTime: msg.mediaTime,
-        paused: msg.action === "pause",
-        updatedAt: Date.now(),
-      };
+      room.state.action = msg.action;
+      room.state.mediaTime = msg.mediaTime;
+      room.state.paused = msg.action === "pause";
+      room.state.updatedAt = Date.now();
       broadcast(
         room,
         MSG.CONTROL,
@@ -151,6 +158,25 @@ function handle(ws, msg) {
         },
         ws.id,
       );
+      break;
+    }
+
+    // Video switch: remember which video the room is on, relay to the partner.
+    case MSG.VIDEO: {
+      const room = getRoom(ws.roomCode);
+      if (!room) return;
+      room.state.videoId = msg.videoId;
+      room.state.updatedAt = Date.now();
+      broadcast(room, MSG.VIDEO, { videoId: msg.videoId, from: ws.id }, ws.id);
+      break;
+    }
+
+    // Buffering signal: relay to the partner so both sides wait together.
+    // state === "start" -> I stalled; "end" -> I recovered.
+    case MSG.BUFFER: {
+      const room = getRoom(ws.roomCode);
+      if (!room) return;
+      broadcast(room, MSG.BUFFER, { state: msg.state, from: ws.id }, ws.id);
       break;
     }
 
