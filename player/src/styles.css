@@ -384,6 +384,15 @@ body {
   }
 }
 
+.identity {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  background: var(--panel);
+  border: 2px solid var(--ink);
+}
+
 .big {
   font-size: 11px;
   padding: 14px;

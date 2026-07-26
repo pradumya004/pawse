@@ -2,16 +2,14 @@
  * @file src/lib/PawseClient.js
  * Framework-agnostic Pawse client for the own-files player (Track B).
  *
- * QUALITY-FIRST DESIGN (roadmap tiers B1/B0): we do NOT live-stream a re-encoded
- * picture (that was the laggy captureStream slice). Instead the HOST sends the
- * ORIGINAL file's bytes over a WebRTC DataChannel; the PARTNER reassembles them
- * into the exact same file and plays it LOCALLY. Result: both sides play native,
- * bit-identical video — no re-encode, no live-stream lag, fully seekable — and
- * stay in sync via play/pause/seek control events (like the extension).
+ * QUALITY-FIRST DESIGN (roadmap tiers B1/B0): the HOST sends the ORIGINAL file's
+ * bytes over a WebRTC DataChannel; the PARTNER reassembles the exact same file
+ * and plays it LOCALLY. Both play native, bit-identical video — no re-encode, no
+ * live-stream lag, fully seekable — and stay in sync via play/pause/seek.
  *
- * Tradeoff: the partner downloads before watching (peer-to-peer, so it's fast on
- * a LAN and matches the host's upload over the internet). This is the "pre-load"
- * model from the roadmap — the price of perfect quality with zero playback lag.
+ * RESILIENCE: room + name persist to localStorage, so a refresh or a dropped
+ * socket auto-reconnects and rejoins the same room (the server holds it for a
+ * 2-min grace window). When the partner rejoins, the host re-offers the file.
  *
  * React (App.jsx) only calls these methods and subscribes to `onState`.
  */
@@ -29,11 +27,12 @@ export class PawseClient {
     this.clientId = null;
     this.room = null;
     this.role = null; // "host" | "follower"
-    this.myName = "Guest";
+    this.myName = localStorage.getItem("pawse_name") || "Guest";
     this.partnerHere = false;
     this.partnerName = null;
     this.status = "connecting";
     this.fileName = null;
+    this.reconnectDelay = 1000;
 
     // WebRTC / transfer
     this.pc = null;
@@ -44,17 +43,31 @@ export class PawseClient {
     this.suppress = false;
     this.video = null;
     this.hint = "";
-    this.progress = 0; // 0..1 transfer progress
+    this.progress = 0;
     this.transfer = "idle"; // idle | sending | receiving | ready
     this._lastPct = -1;
 
-    // receive buffers
     this._chunks = [];
     this._recvBytes = 0;
     this._meta = null;
   }
 
+  _updateHint() {
+    if (this.role === "host") {
+      if (!this.fileChosen) this.hint = "pick a movie file to start 🎬";
+      else if (!this.partnerHere) this.hint = "waiting for your partner to join... 😿";
+      else this.hint = ""; // partner here — progress bar / video takes over
+    } else if (this.role === "follower") {
+      if (this.transfer === "receiving") this.hint = "";
+      else if (this.video && this.video.src) this.hint = "";
+      else this.hint = "waiting for the host to pick a movie... 🍿";
+    } else {
+      this.hint = "";
+    }
+  }
+
   _emit() {
+    this._updateHint();
     this.onState({
       status: this.status,
       room: this.room,
@@ -76,19 +89,38 @@ export class PawseClient {
     el.addEventListener("seeked", () => this._reportControl("seek"));
   }
 
-  // ---- connection ----
+  // ---- connection + resilience ----
 
   connect() {
     this.ws = new WebSocket(PAWSE_CONFIG.RELAY_WS);
     this.ws.onopen = () => {
       this.status = "connected";
+      this.reconnectDelay = 1000;
+      // Auto-rejoin a persisted room (refresh / reconnect).
+      const saved = localStorage.getItem("pawse_room");
+      if (saved && !this.room) this._send("join", { room: saved, name: this.myName });
       this._emit();
     };
     this.ws.onclose = () => {
-      this.status = "disconnected";
-      this._emit();
+      this.ws = null;
+      if (localStorage.getItem("pawse_room")) {
+        this.status = "reconnecting";
+        this._emit();
+        this._scheduleReconnect();
+      } else {
+        this.status = "disconnected";
+        this._emit();
+      }
     };
     this.ws.onmessage = (e) => this._handle(JSON.parse(e.data));
+  }
+
+  _scheduleReconnect() {
+    setTimeout(() => {
+      if (this.ws) return;
+      this.connect();
+      this.reconnectDelay = Math.min(this.reconnectDelay * 2, 30000);
+    }, this.reconnectDelay);
   }
 
   _send(type, payload = {}) {
@@ -102,14 +134,17 @@ export class PawseClient {
 
   create(name) {
     this.myName = name || "Guest";
+    localStorage.setItem("pawse_name", this.myName);
     this._send("create", { name: this.myName });
   }
   join(code, name) {
     this.myName = name || "Guest";
+    localStorage.setItem("pawse_name", this.myName);
     this._send("join", { room: code, name: this.myName });
   }
   leave() {
     this._send("leave");
+    localStorage.removeItem("pawse_room");
     this._teardown();
     Object.assign(this, {
       room: null,
@@ -126,15 +161,15 @@ export class PawseClient {
     this._emit();
   }
 
-  /** HOST picks a local file: play it locally, then send it if partner's here. */
   chooseFile(file) {
     if (!this.video) return;
     this.file = file;
     this.fileName = file.name;
     this.fileChosen = true;
+    this.progress = 0;
+    this.transfer = "idle";
     this.video.srcObject = null;
     this.video.src = URL.createObjectURL(file); // host plays native file locally
-    this.hint = this.partnerHere ? "" : "waiting for your partner to join...";
     this._teardown();
     this._maybeStartTransfer();
     this._emit();
@@ -153,25 +188,49 @@ export class PawseClient {
         if (typeof msg.partnerHere === "boolean") this.partnerHere = msg.partnerHere;
         if (msg.partnerName) this.partnerName = msg.partnerName;
         this.status = this.role === "host" ? "hosting" : "in room";
-        this.hint =
-          this.role === "host" ? "choose a movie file to start" : "waiting for the host to pick a movie...";
+        localStorage.setItem("pawse_room", this.room);
+        localStorage.setItem("pawse_name", this.myName);
         this._maybeStartTransfer();
         this._emit();
         break;
       case "presence":
         this.partnerHere = msg.event === "joined";
         if (msg.name) this.partnerName = msg.name;
-        if (this.partnerHere) this._maybeStartTransfer();
+        if (this.partnerHere && this.role === "host" && this.fileChosen) {
+          // (Re)start the transfer for a partner that just (re)joined.
+          this._teardown();
+          this.progress = 0;
+          this.transfer = "idle";
+          this._maybeStartTransfer();
+        }
         this._emit();
         break;
       case "signal":
         this._handleSignal(msg.data);
         break;
       case "control":
-        this._applyRemoteControl(msg.action, msg.mediaTime);
+        if (msg.action === "resync") {
+          // Partner finished downloading and wants our current position.
+          if (this.role === "host" && this.video) {
+            this._send("control", {
+              action: this.video.paused ? "pause" : "play",
+              mediaTime: this.video.currentTime,
+              sentAt: Date.now(),
+            });
+          }
+        } else {
+          this._applyRemoteControl(msg.action, msg.mediaTime);
+        }
         break;
       case "error":
-        this.status = `err: ${msg.reason}`;
+        if (msg.reason === "no_such_room") {
+          localStorage.removeItem("pawse_room");
+          this.room = null;
+          this.role = null;
+          this.status = "connected";
+        } else {
+          this.status = `err: ${msg.reason}`;
+        }
         this._emit();
         break;
     }
@@ -201,7 +260,6 @@ export class PawseClient {
     this.pending = [];
   }
 
-  /** HOST: when a file is chosen AND the partner is here, open a channel + offer. */
   _maybeStartTransfer() {
     if (this.role !== "host" || !this.fileChosen || !this.partnerHere || this.pc) return;
     this.pc = this._newPeer();
@@ -219,8 +277,9 @@ export class PawseClient {
   _handleSignal(data) {
     if (data.sdp) {
       if (data.sdp.type === "offer") {
+        this._teardown(); // drop any stale peer before accepting a fresh offer
         this.pc = this._newPeer();
-        this.pc.ondatachannel = (e) => this._recvChannel(e.channel); // FOLLOWER receives
+        this.pc.ondatachannel = (e) => this._recvChannel(e.channel);
         this.pc
           .setRemoteDescription(data.sdp)
           .then(() => this._flush())
@@ -229,7 +288,7 @@ export class PawseClient {
           .then(() => this._signal({ sdp: this.pc.localDescription }))
           .catch((e) => console.warn("[Pawse] answer failed", e));
       } else if (data.sdp.type === "answer") {
-        this.pc.setRemoteDescription(data.sdp).then(() => this._flush()).catch(() => {});
+        this.pc?.setRemoteDescription(data.sdp).then(() => this._flush()).catch(() => {});
       }
     } else if (data.candidate) {
       if (this.pc && this.pc.remoteDescription && this.pc.remoteDescription.type) {
@@ -241,19 +300,22 @@ export class PawseClient {
   }
 
   _flush() {
-    this.pending.forEach((c) => this.pc.addIceCandidate(c).catch(() => {}));
+    this.pending.forEach((c) => this.pc?.addIceCandidate(c).catch(() => {}));
     this.pending = [];
   }
 
-  // ---- file transfer (host -> partner) ----
+  // ---- file transfer ----
 
   async _sendFile() {
     const file = this.file;
+    if (!file) return;
     this.transfer = "sending";
+    this.progress = 0;
+    this._lastPct = -1;
     this.channel.send(JSON.stringify({ meta: true, name: file.name, size: file.size, mime: file.type }));
     let offset = 0;
     while (offset < file.size) {
-      // Backpressure: wait if the send buffer is too full.
+      if (!this.channel || this.channel.readyState !== "open") return; // partner left
       if (this.channel.bufferedAmount > HIGH_WATER) {
         await new Promise((res) => {
           this.channel.onbufferedamountlow = () => {
@@ -261,6 +323,7 @@ export class PawseClient {
             res();
           };
         });
+        if (!this.channel || this.channel.readyState !== "open") return;
       }
       const buf = await file.slice(offset, offset + CHUNK).arrayBuffer();
       this.channel.send(buf);
@@ -278,8 +341,9 @@ export class PawseClient {
     this._chunks = [];
     this._recvBytes = 0;
     this._meta = null;
+    this._lastPct = -1;
     this.transfer = "receiving";
-    this.hint = "receiving the movie...";
+    this.progress = 0;
     this._emit();
     ch.onmessage = (e) => {
       if (typeof e.data === "string") {
@@ -297,17 +361,17 @@ export class PawseClient {
   _assemble() {
     const blob = new Blob(this._chunks, { type: this._meta?.mime || "video/mp4" });
     this.video.srcObject = null;
-    this.video.src = URL.createObjectURL(blob); // partner now plays the NATIVE file
+    this.video.src = URL.createObjectURL(blob); // partner plays the NATIVE file
     this.fileName = this._meta?.name || "movie";
     this.transfer = "ready";
     this.progress = 1;
-    this.hint = "";
     this.status = "watching";
-    this._chunks = []; // free the chunk refs (blob holds the data)
+    this._chunks = [];
     this._emit();
+    // Ask the host where they are so we jump straight into sync.
+    this._send("control", { action: "resync" });
   }
 
-  /** Emit progress only when the whole-number percent changes (throttle). */
   _setProgress(p) {
     this.progress = p;
     const pct = Math.floor(p * 100);
@@ -317,7 +381,7 @@ export class PawseClient {
     }
   }
 
-  // ---- playback sync (both play local files, so seeks work) ----
+  // ---- playback sync ----
 
   _reportControl(action) {
     if (this.suppress) return;
@@ -325,6 +389,7 @@ export class PawseClient {
   }
 
   _applyRemoteControl(action, mediaTime) {
+    if (!this.video || !this.video.src) return; // nothing loaded yet
     this.suppress = true;
     if (typeof mediaTime === "number" && Math.abs(this.video.currentTime - mediaTime) > 0.5) {
       this.video.currentTime = mediaTime;

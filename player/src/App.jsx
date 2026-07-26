@@ -89,20 +89,23 @@ export default function App() {
             <h2 className="cardTitle">watch your movies, together</h2>
             <p className="cardSub">one of you picks a file — the other just joins.<br />no accounts. no uploads. just you two &amp; a cat. 🐱</p>
 
-            <label className="label" htmlFor="name">WHAT DO WE CALL YOU?</label>
-            <input
-              id="name"
-              className="input"
-              placeholder="your name, cutie"
-              maxLength={12}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
+            <div className="identity">
+              <label className="label" htmlFor="name">① FIRST, WHO ARE YOU?</label>
+              <input
+                id="name"
+                className="input"
+                placeholder="your name, cutie"
+                maxLength={12}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
 
+            <div className="label">② THEN PICK ONE:</div>
             <button className="btn primary big" onClick={onCreate}>🎬 START A ROOM</button>
-            <div className="tinyhint">(pick this one if you have the movie file)</div>
+            <div className="tinyhint">(you have the movie file)</div>
 
-            <div className="divider"><span>OR SNEAK INTO A ROOM</span></div>
+            <div className="divider"><span>OR</span></div>
 
             <div className="join">
               <input
@@ -115,6 +118,7 @@ export default function App() {
               />
               <button className="btn" onClick={onJoin}>JOIN</button>
             </div>
+            <div className="tinyhint">(your partner has the file — you just watch)</div>
 
             <MeowFeed caption="today's certified cat content" />
           </section>

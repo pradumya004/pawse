@@ -32,7 +32,15 @@
 - **Meow Feed added:** rotating cat memes (meme-api.com → Reddit, CORS-ok) in lobby + while waiting/transferring. Graceful fallback if API down. Files: `src/MeowFeed.jsx`.
 - **UI made cuter/funkier:** wiggling paws, playful copy, 😻/😿 partner states, striped progress bar.
 - **▶ DEV WORKFLOW:** backend `cd server && npm run dev`; frontend `cd player && npm run dev` → http://localhost:5173. Two windows to test.
-- **Next Track B:** B0 shared-file detection (skip transfer if both have it), subtitles, MSE play-while-downloading for huge files (current impl holds file in memory on receiver).
+- **Edge bugs fixed + verified in-browser (Claude-in-Chrome, 0 console errors):**
+  1. Host's "waiting for partner" hint stuck after join → central `_updateHint()`; now flips to "pick a movie file"/partner name.
+  2. Partner refresh logged out of room → player now persists room+name to localStorage + reconnects/rejoins (verified: refreshed partner stayed in room).
+  3. Host didn't re-send file after partner rejoin → teardown stale peer on presence, re-offer.
+  4. Partner missed host's position after transfer → `resync` request on assemble.
+  5. Name UX unclear → lobby now ①name ②pick-one with hints for both paths.
+- **Known limitation:** HOST refresh loses the File (can't persist a File object) + role may migrate; host should re-create if they refresh. Documented, not fixed for v1.
+- **Next Track B:** B0 shared-file detection, subtitles, MSE play-while-downloading for huge files.
+- **▶ TO DEPLOY v1:** deploy relay to free host (Render/Fly/Railway) + player to static host (Vercel/GH Pages) + point config.js/PAWSE_CONFIG at prod URLs + extension host_permissions. This is the Phase 6 deploy step — REQUIRED before real long-distance use (all URLs are localhost now).
 
 **Stack decision (locked):** extension = vanilla HTML/CSS/JS (loads unpacked). player = Vite + React (real web app; where React earns its keep). server = Node. Future paid dashboard would also be React.
 
