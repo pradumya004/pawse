@@ -122,6 +122,10 @@ function handle(ws, msg) {
     case MSG.CREATE: {
       ws.name = msg.name || "Guest";
       const room = createRoom(ws.id, ws);
+      if (!room) {
+        send(ws, MSG.ERROR, { reason: "server_full" });
+        return;
+      }
       ws.roomCode = room.code;
       send(ws, MSG.ROOM, { room: room.code, role: "host", partnerHere: false });
       break;
@@ -243,4 +247,5 @@ const heartbeat = setInterval(() => {
 }, 30000);
 wss.on("close", () => clearInterval(heartbeat));
 
-server.listen(PORT, () => console.log(`🐾 Pawse relay listening on :${PORT}`));
+// Bind to 0.0.0.0 so cloud hosts (Render/Fly) can route traffic to us.
+server.listen(PORT, "0.0.0.0", () => console.log(`🐾 Pawse relay listening on :${PORT}`));

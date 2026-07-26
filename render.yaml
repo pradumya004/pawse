@@ -1,0 +1,16 @@
+# Render Blueprint for the Pawse relay (the WebSocket server).
+# Deploy: on render.com, "New +" -> "Blueprint" -> connect this repo. Render
+# reads this file and provisions the service. Free plan sleeps after ~15 min
+# idle; an UptimeRobot ping to /health keeps it warm (see docs/DEPLOY.md).
+services:
+  - type: web
+    name: pawse-relay
+    runtime: node
+    rootDir: server # our server code lives in server/
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "20"

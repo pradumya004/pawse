@@ -26,6 +26,10 @@ const CODE_LEN = 6;
  *  network drop can rejoin the SAME code instead of the room vanishing. */
 const GRACE_MS = 120000; // 2 minutes
 
+/** Safety cap for a public relay: refuse new rooms past this to bound memory /
+ *  abuse. Plenty for a personal tool; raise it if real usage grows. */
+const MAX_ROOMS = 500;
+
 /**
  * Generate a room code that isn't already in use.
  * Uses crypto.randomInt (not Math.random) so codes aren't predictable.
@@ -49,6 +53,7 @@ function generateCode() {
  * @returns {object} the new room object (its `.code` is the shareable code)
  */
 export function createRoom(hostId, ws) {
+  if (rooms.size >= MAX_ROOMS) return null; // public-relay safety cap
   const code = generateCode();
   const room = {
     code,
