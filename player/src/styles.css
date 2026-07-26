@@ -1,12 +1,11 @@
 /*
-  player/style.css — Pawse own-files player, "Cream & Ginger" pixel-cat theme.
-  Full-page layout (unlike the 300px popup): a top bar, a centered card in the
-  lobby, and a big video stage in the room. Same tokens/feel as the extension.
+  src/styles.css — Pawse player, "Cream & Ginger" pixel-cat theme.
+  Full-page layout: top bar, centered lobby card, big video stage in the room.
 */
 
 @font-face {
   font-family: "PressStart";
-  src: url("../extension/popup/fonts/PressStart2P.ttf") format("truetype");
+  src: url("/PressStart2P.ttf") format("truetype");
   font-display: swap;
 }
 
@@ -30,11 +29,14 @@
 }
 
 body {
-  position: relative;
   min-height: 100vh;
   background: var(--bg);
   color: var(--ink);
   font-family: var(--pixel-font);
+}
+
+#root {
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
@@ -75,6 +77,22 @@ body {
   filter: drop-shadow(2px 2px 0 rgba(42, 36, 56, 0.3));
 }
 
+.lid {
+  animation: blink 4s steps(1) infinite;
+}
+
+@keyframes blink {
+  0%,
+  92%,
+  100% {
+    opacity: 0;
+  }
+  94%,
+  97% {
+    opacity: 1;
+  }
+}
+
 .logo {
   font-size: 18px;
   letter-spacing: 1px;
@@ -102,7 +120,7 @@ body {
   background: var(--live);
 }
 
-/* --- main stage --- */
+/* --- stage --- */
 .stage {
   flex: 1;
   display: flex;
@@ -164,7 +182,7 @@ body {
   color: #b8ac92;
 }
 
-#roomInput {
+#room {
   text-align: center;
   text-transform: uppercase;
   letter-spacing: 3px;
@@ -176,7 +194,7 @@ body {
   font-size: 9px;
   line-height: 1.5;
   letter-spacing: 1px;
-  padding: 12px 12px;
+  padding: 12px;
   color: var(--bg);
   background: var(--ink);
   border: 3px solid var(--ink);
@@ -242,7 +260,7 @@ body {
 }
 
 /* --- room view --- */
-#room {
+.room {
   width: 100%;
   max-width: 960px;
   display: flex;

@@ -27,8 +27,11 @@
 ## Current position
 
 - **Phase 3 slice 1 built (UNTESTED):** standalone `player/` page. Host picks a local file → streams to partner over WebRTC (captureStream / tier B2) with signaling relayed by the server (new `MSG.SIGNAL`). Play/pause/seek relayed. This proves the P2P pipeline end-to-end. **Next iteration = B1 lossless file-byte transfer + MSE for native quality** (roadmap 3.3).
-- **▶ TEST Phase 3:** open `player/index.html` in two windows (host + partner). Host: name → START A ROOM → CHOOSE A MOVIE FILE. Partner: JOIN with code → should see the streamed video. Verify play/pause mirrors.
-- **⚠️ captureStream is provisional** — re-encoded/adaptive quality. B1 upgrade pending (user's quality requirement).
+- **Player is now a Vite + React app** (user wanted a real `npm run dev` frontend; the extension stays vanilla). Logic lives in `PawseClient` (plain class); React only renders. Build verified (`npm run build` → dist/ ok).
+- **▶ DEV WORKFLOW:** backend `cd server && npm run dev`; frontend `cd player && npm run dev` → http://localhost:5173. Open that URL in two windows to test host/partner.
+- **⚠️ captureStream is provisional** — re-encoded/adaptive quality. B1 lossless upgrade pending (user's quality requirement).
+
+**Stack decision (locked):** extension = vanilla HTML/CSS/JS (loads unpacked). player = Vite + React (real web app; where React earns its keep). server = Node. Future paid dashboard would also be React.
 
 ---
 ### (previous) Phase 2 history
@@ -93,11 +96,21 @@ pawse/
 │       ├── popup.css            ✅ "Cream & Ginger" pixel theme, overflow-safe
 │       └── fonts/
 │           └── PressStart2P.ttf ✅ bundled 8-bit font (OFL)
-├── player/                      🚧 Phase 3 — Track B (own-files P2P player) — slice 1
-│   ├── index.html               ✅ standalone page: lobby + room + video stage
-│   ├── config.js                ✅ relay URL + STUN ICE servers
-│   ├── player.js                ✅ WS + WebRTC (captureStream) + room + sync
-│   └── style.css                ✅ Cream & Ginger pixel theme, full-page layout
+├── player/                      🚧 Phase 3 — Track B (own-files P2P player) — VITE + REACT
+│   ├── package.json             ✅ scripts: dev / build / preview; deps react + vite
+│   ├── vite.config.js           ✅ React plugin, dev server port 5173
+│   ├── index.html               ✅ Vite entry → /src/main.jsx
+│   ├── .gitignore               ✅ node_modules, dist
+│   ├── public/
+│   │   └── PressStart2P.ttf      ✅ bundled pixel font (served at /PressStart2P.ttf)
+│   └── src/
+│       ├── main.jsx             ✅ React root
+│       ├── App.jsx              ✅ UI (lobby/room views) — calls PawseClient
+│       ├── Cat.jsx              ✅ pixel-cat SVG component
+│       ├── config.js            ✅ relay URL + STUN servers
+│       ├── styles.css           ✅ Cream & Ginger pixel theme
+│       └── lib/
+│           └── PawseClient.js   ✅ framework-agnostic WS + WebRTC + sync class
 └── shared/                      ⬜ later — theme tokens + protocol shared across clients
 ```
 
