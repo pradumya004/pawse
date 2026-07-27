@@ -51,6 +51,7 @@
   - Chat/page scroll: `#root` height:100vh + overflow hidden; stage overflow-y auto; chatlog min-height:0 → chat scrolls internally, page no longer grows.
   - A/V call not connecting: **queue call ICE candidates arriving before remote desc** (were dropped → ICE never completed). Added `play()` on stream assign + `[Pawse] call ...` console logs for debugging.
 - **Format note (support/docs):** MKV files with AC3/DTS/Dolby audio play silent in browsers (no decodable audio track). Guide users to MP4 (H.264 + AAC), or `ffmpeg -i in.mkv -c:v copy -c:a aac out.mp4`.
+- **Host-role-on-refresh fix:** host was keyed to the ephemeral WS connection id → refresh demoted host to follower (movie picker vanished). Fixed with a stable per-browser `uid` (localStorage) sent on create/join; server tracks `hostUid` and no longer migrates host on disconnect. Touches server + player (both redeploy). NOTE: extension (Track A) has the same latent issue (no stable uid yet) — apply the same fix there if it surfaces.
 - **Pending:** test call+chat after hard-refresh (both START CAMERA); if call still fails, grab console `[Pawse] call` logs. Store screenshots. openrelay TURN → get free metered.ca key if flaky.
 - **Rebuild:** icons `cd extension && node scripts/make-icons.js`; zip `node scripts/package-extension.cjs` (build/ is gitignored).
 
