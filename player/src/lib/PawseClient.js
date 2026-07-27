@@ -50,6 +50,21 @@ export class PawseClient {
     this._chunks = [];
     this._recvBytes = 0;
     this._meta = null;
+
+    // Phones/browsers SUSPEND background tabs, which silently drops the socket.
+    // When the tab comes back to the foreground, reconnect if we're not open —
+    // connect()'s onopen auto-rejoins the saved room. This fixes the "waiting
+    // for partner" case where someone tabbed away (e.g. to send the code).
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", () => {
+        if (
+          document.visibilityState === "visible" &&
+          (!this.ws || this.ws.readyState !== WebSocket.OPEN)
+        ) {
+          this.connect();
+        }
+      });
+    }
   }
 
   _updateHint() {
