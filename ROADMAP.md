@@ -155,7 +155,9 @@ Live-streaming native quality in real time only stays smooth if **host upload sp
 
 - ✅ Reconnect resume (refresh mid-movie → rejoin at same timestamp) — *done in Phase 2 robustness pass*
 - ✅ Buffer-aware sync (follower buffering → auto-pause partner, auto-resume) — *done in Phase 2*
-- Free-tier deploy of the relay + cold-start "waking server…" UX (needed for real remote testing with Kitty)
+- ✅ **Free-tier deploy DONE:** player → Vercel (**https://pawsetv.vercel.app**), relay → Render Singapore (`wss://pawse-relay.onrender.com`), kept warm by UptimeRobot. See [docs/DEPLOY.md](docs/DEPLOY.md).
+- ⬜ Point the **extension** at the cloud relay (config.js + host_permissions) so Track A works in prod
+- Cold-start "waking server…" UX (mostly moot thanks to UptimeRobot keep-alive)
 - Ad-pause handling (YouTube/DRM: pause sync during ad breaks, re-sync after)
 - Auto-join share link (`#pawse=CODE`)
 - Room passwords (it's just for you two)

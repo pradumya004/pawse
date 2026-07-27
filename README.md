@@ -2,6 +2,8 @@
 
 **Watch together, purr-fectly in sync.**
 
+> **🟢 v1 is LIVE:** **https://pawsetv.vercel.app** — open it in two windows (or send it to your person), pick a movie file, watch together. Backend relay: `wss://pawse-relay.onrender.com`.
+
 Pawse is a free, self-hosted watch-together system for two people in a long-distance relationship (or any two humans + cats). It syncs playback — play, pause, seek — across YouTube, Netflix, Prime Video, JioHotstar, any site with a `<video>` tag, **and your own local movie files**, with voice/camera and chat layered on top.
 
 *Paws* + *pause*: the whole product is a play/pause sync engine. The name is the feature.

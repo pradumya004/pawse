@@ -1,5 +1,13 @@
 # 🐾 Pawse — Deploy Guide (v1)
 
+> **✅ STATUS: DEPLOYED & LIVE**
+> - **App (player):** https://pawsetv.vercel.app (Vercel, public)
+> - **Relay (backend):** `wss://pawse-relay.onrender.com` (Render Singapore, free) — svc `srv-d9ji3p1l565s73fubkd0`
+> - **Keep-alive:** UptimeRobot monitor #803599828 pinging `/health`
+> - **Still TODO:** point the extension (Track A) at the cloud relay — see Part 3.
+>
+> The guide below is the reproducible how-to (and how to redeploy / upgrade).
+
 Goal: get Pawse off `localhost` and onto the internet, **free**, so you and Kitty
 can use it across the distance. Two things to deploy:
 
