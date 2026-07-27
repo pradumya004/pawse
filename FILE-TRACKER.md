@@ -4,6 +4,8 @@
 
 > **GitHub:** https://github.com/pradumya004/pawse (private). Commit author: `pradumya.official@gmail.com`. Account: `pradumya004`.
 >
+> **DEPLOY (v1):** Relay LIVE on Render (Singapore, free) → `wss://pawse-relay.onrender.com` (svc `srv-d9ji3p1l565s73fubkd0`). Player → Vercel (pending). Keep-alive → UptimeRobot (pending). Set `VITE_RELAY_WS=wss://pawse-relay.onrender.com` in Vercel.
+>
 > **⚙️ AUTO-PUSH RULE (standing authorization):** at the end of every phase, automatically `git add . && git commit && git push` — no need to ask. Commit message format: `Phase N: <summary>`.
 
 **Legend:** ✅ done · 🚧 in progress · ⬜ planned (not created yet)
