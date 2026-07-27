@@ -20,9 +20,11 @@ const HIGH_WATER = 8 * 1024 * 1024; // pause sending above 8 MB buffered
 const LOW_WATER = 2 * 1024 * 1024; // resume once drained below 2 MB
 
 export class PawseClient {
-  /** @param {{onState: (s: object) => void}} opts */
-  constructor({ onState }) {
+  /** @param {{onState:Function, onLocalStream?:Function, onRemoteStream?:Function}} opts */
+  constructor({ onState, onLocalStream, onRemoteStream }) {
     this.onState = onState;
+    this.onLocalStream = onLocalStream; // called with our webcam stream
+    this.onRemoteStream = onRemoteStream; // called with partner's webcam stream
     this.ws = null;
     this.clientId = null;
     this.room = null;
@@ -50,6 +52,15 @@ export class PawseClient {
     this._chunks = [];
     this._recvBytes = 0;
     this._meta = null;
+
+    // ---- Together Layer (Phase 5): A/V call + chat ----
+    this.callPc = null; // SEPARATE peer connection for the webcam/mic call
+    this.localCall = null; // our getUserMedia stream
+    this.cameraOn = false;
+    this.partnerCam = false; // is the partner's camera stream flowing?
+    this.makingOffer = false; // perfect-negotiation flags (avoid offer glare)
+    this.ignoreOffer = false;
+    this.messages = []; // chat log: { mine, text }
 
     // Phones/browsers SUSPEND background tabs, which silently drops the socket.
     // When the tab comes back to the foreground, reconnect if we're not open —
@@ -93,6 +104,9 @@ export class PawseClient {
       hint: this.hint,
       progress: this.progress,
       transfer: this.transfer,
+      cameraOn: this.cameraOn,
+      partnerCam: this.partnerCam,
+      messages: this.messages,
     });
   }
 
@@ -221,7 +235,13 @@ export class PawseClient {
         this._emit();
         break;
       case "signal":
-        this._handleSignal(msg.data);
+        // A signal tagged ch:"call" is for the webcam call; else the file P2P.
+        if (msg.data && msg.data.ch === "call") this._handleCallSignal(msg.data);
+        else this._handleSignal(msg.data);
+        break;
+      case "chat":
+        this.messages = [...this.messages, { mine: false, text: msg.text }];
+        this._emit();
         break;
       case "control":
         if (msg.action === "resync") {
@@ -412,5 +432,104 @@ export class PawseClient {
     if (action === "play") this.video.play().catch(() => {});
     else if (action === "pause") this.video.pause();
     setTimeout(() => (this.suppress = false), 150);
+  }
+
+  // =====================================================================
+  //  Together Layer (Phase 5): webcam/mic call + text chat
+  // =====================================================================
+
+  /** Send a chat message to the partner (and add it to our own log). */
+  sendChat(text) {
+    const t = (text || "").trim();
+    if (!t) return;
+    this.messages = [...this.messages, { mine: true, text: t }];
+    this._send("chat", { text: t });
+    this._emit();
+  }
+
+  /**
+   * Lazily create the SEPARATE peer connection used for the A/V call (kept
+   * apart from the file-transfer `pc`). Uses the "perfect negotiation" pattern
+   * so either side can turn their camera on at any time without offer glare.
+   */
+  _ensureCallPc() {
+    if (this.callPc) return this.callPc;
+    const pc = new RTCPeerConnection({ iceServers: PAWSE_CONFIG.ICE_SERVERS });
+    // The "impolite" peer (host) wins collisions; the "polite" one (follower) yields.
+    this._polite = this.role !== "host";
+
+    pc.onicecandidate = (e) => {
+      if (e.candidate) this._signal({ ch: "call", candidate: e.candidate });
+    };
+    pc.ontrack = (e) => {
+      this.partnerCam = true;
+      if (this.onRemoteStream) this.onRemoteStream(e.streams[0]);
+      this._emit();
+    };
+    // Adding tracks (or the partner doing so) fires this — we (re)offer.
+    pc.onnegotiationneeded = async () => {
+      try {
+        this.makingOffer = true;
+        await pc.setLocalDescription(); // implicit offer
+        this._signal({ ch: "call", desc: pc.localDescription });
+      } catch (err) {
+        console.warn("[Pawse] call negotiation failed", err);
+      } finally {
+        this.makingOffer = false;
+      }
+    };
+    this.callPc = pc;
+    return pc;
+  }
+
+  /** Handle an incoming call signal (SDP/ICE) with perfect-negotiation rules. */
+  async _handleCallSignal(data) {
+    const pc = this._ensureCallPc();
+    try {
+      if (data.desc) {
+        const offerCollision =
+          data.desc.type === "offer" && (this.makingOffer || pc.signalingState !== "stable");
+        this.ignoreOffer = !this._polite && offerCollision;
+        if (this.ignoreOffer) return; // impolite peer ignores a colliding offer
+        await pc.setRemoteDescription(data.desc);
+        if (data.desc.type === "offer") {
+          await pc.setLocalDescription(); // implicit answer
+          this._signal({ ch: "call", desc: pc.localDescription });
+        }
+      } else if (data.candidate) {
+        try {
+          await pc.addIceCandidate(data.candidate);
+        } catch (err) {
+          if (!this.ignoreOffer) throw err;
+        }
+      }
+    } catch (err) {
+      console.warn("[Pawse] call signal error", err);
+    }
+  }
+
+  /** Turn our webcam+mic on and add the tracks to the call (triggers an offer). */
+  async startCamera() {
+    try {
+      const pc = this._ensureCallPc();
+      this.localCall = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      if (this.onLocalStream) this.onLocalStream(this.localCall);
+      for (const track of this.localCall.getTracks()) pc.addTrack(track, this.localCall);
+      this.cameraOn = true;
+      this._emit();
+    } catch (err) {
+      console.warn("[Pawse] camera/mic blocked", err);
+      this.cameraOn = false;
+      this._emit();
+    }
+  }
+
+  /** Stop sending our camera/mic (simple version: stop the local tracks). */
+  stopCamera() {
+    if (this.localCall) this.localCall.getTracks().forEach((t) => t.stop());
+    this.localCall = null;
+    if (this.onLocalStream) this.onLocalStream(null);
+    this.cameraOn = false;
+    this._emit();
   }
 }

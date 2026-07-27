@@ -3,8 +3,8 @@
  * The Pawse player UI (React). All real-time logic lives in PawseClient; this
  * component only renders state and calls client methods on user actions.
  *
- * Layout: responsive two-column (grid) so the screen is filled and fits without
- * page scroll on desktop; stacks on mobile.
+ * Room sidebar now holds the "Together Layer": webcam bubbles (you + partner),
+ * a camera toggle, and text chat. The movie fills the main column.
  */
 import { useEffect, useRef, useState } from "react";
 import { PawseClient } from "./lib/PawseClient.js";
@@ -13,25 +13,27 @@ import MeowFeed from "./MeowFeed.jsx";
 
 export default function App() {
   const [s, setS] = useState({
-    status: "connecting",
-    room: null,
-    role: null,
-    partnerHere: false,
-    partnerName: null,
-    fileName: null,
-    hint: "",
-    progress: 0,
-    transfer: "idle",
+    status: "connecting", room: null, role: null, partnerHere: false, partnerName: null,
+    fileName: null, hint: "", progress: 0, transfer: "idle",
+    cameraOn: false, partnerCam: false, messages: [],
   });
   const [name, setName] = useState(localStorage.getItem("pawse_name") || "");
   const [code, setCode] = useState("");
   const [copied, setCopied] = useState(false);
+  const [chatText, setChatText] = useState("");
 
   const clientRef = useRef(null);
   const videoRef = useRef(null);
+  const localCamRef = useRef(null);
+  const remoteCamRef = useRef(null);
+  const chatLogRef = useRef(null);
 
   useEffect(() => {
-    const c = new PawseClient({ onState: setS });
+    const c = new PawseClient({
+      onState: setS,
+      onLocalStream: (stream) => { if (localCamRef.current) localCamRef.current.srcObject = stream; },
+      onRemoteStream: (stream) => { if (remoteCamRef.current) remoteCamRef.current.srcObject = stream; },
+    });
     clientRef.current = c;
     c.connect();
   }, []);
@@ -39,6 +41,11 @@ export default function App() {
   useEffect(() => {
     if (s.room && videoRef.current) clientRef.current?.attachVideo(videoRef.current);
   }, [s.room]);
+
+  // Auto-scroll the chat to the newest message.
+  useEffect(() => {
+    if (chatLogRef.current) chatLogRef.current.scrollTop = chatLogRef.current.scrollHeight;
+  }, [s.messages]);
 
   const inRoom = !!s.room;
   const isHost = s.role === "host";
@@ -52,6 +59,8 @@ export default function App() {
   const onLeave = () => clientRef.current.leave();
   const onFile = (e) => { const f = e.target.files[0]; if (f) clientRef.current.chooseFile(f); };
   const onCopy = () => { navigator.clipboard.writeText(s.room); setCopied(true); setTimeout(() => setCopied(false), 1200); };
+  const toggleCam = () => (s.cameraOn ? clientRef.current.stopCamera() : clientRef.current.startCamera());
+  const sendChat = (e) => { e.preventDefault(); clientRef.current.sendChat(chatText); setChatText(""); };
 
   return (
     <>
@@ -142,8 +151,39 @@ export default function App() {
                 </div>
               </section>
 
+              {/* ---- Together sidebar: cams + chat ---- */}
               <aside className="sidebar">
-                <MeowFeed caption="stretch those paws" />
+                <div className="cams">
+                  <div className={"cam remote" + (s.partnerCam ? "" : " empty")}>
+                    <video ref={remoteCamRef} autoPlay playsInline />
+                    {!s.partnerCam && <span className="camlabel">😿 {s.partnerName || "partner"} cam off</span>}
+                  </div>
+                  <div className={"cam local" + (s.cameraOn ? "" : " empty")}>
+                    <video ref={localCamRef} autoPlay playsInline muted />
+                    {!s.cameraOn && <span className="camlabel">you</span>}
+                  </div>
+                </div>
+
+                <button className={"btn small camtoggle" + (s.cameraOn ? " on" : "")} onClick={toggleCam}>
+                  {s.cameraOn ? "📷 STOP CAMERA" : "📷 START CAMERA"}
+                </button>
+
+                <div className="chat">
+                  <div className="chatlog" ref={chatLogRef}>
+                    {s.messages.length === 0 && <div className="chatempty">say hi 👋</div>}
+                    {s.messages.map((m, i) => (
+                      <div key={i} className={"msg" + (m.mine ? " mine" : "")}>
+                        <span className="msgwho">{m.mine ? "you" : s.partnerName || "them"}</span>
+                        <span className="msgtext">{m.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <form className="chatbar" onSubmit={sendChat}>
+                    <input className="chatinput" placeholder="type something cute..." maxLength={200}
+                      value={chatText} onChange={(e) => setChatText(e.target.value)} />
+                    <button className="btn small" type="submit">SEND</button>
+                  </form>
+                </div>
               </aside>
             </div>
           </div>

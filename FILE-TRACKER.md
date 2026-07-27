@@ -25,7 +25,7 @@
 | 2 — Extension (Track A, YouTube) | ✅ working (user-confirmed) | ✅ `Phase 2 polish...` |
 | 3 — Own-files P2P (Track B) | ✅ B1 file transfer + Meow Feed; edge bugs fixed & verified | ✅ `Phase 3 fixes...` (pending user's real-file playback test) |
 | 4 — DRM adapters | ⬜ | ⬜ |
-| 5 — Together layer (cam/chat) | ⬜ | ⬜ |
+| 5 — Together layer (cam/chat) | 🚧 voice/video call + text chat built (player) | ⬜ testing |
 | 6 — Polish + **DEPLOY** | ✅ **LIVE** (player Vercel + relay Render + UptimeRobot) | ✅ `v1 deployed...` |
 | 7 — Monetization (see docs/MONETIZATION.md) | ⬜ future | ⬜ |
 | 8 — Store distribution (Chrome Web Store) | 🚧 listing prepped; awaiting user's $5 + submit | ⬜ |
@@ -38,7 +38,13 @@
 - **✅ REAL-SESSION BUGS FIXED (from gf test):**
   1. **No video across networks → added TURN** in `player/src/config.js` ICE_SERVERS (openrelay.metered.ca, STUN+TURN). STUN-only failed cross-ISP/mobile NAT. THE critical fix for long-distance P2P.
   2. **"waiting for partner" (her WS dropped when tab backgrounded) → visibilitychange reconnect** in `player/src/lib/PawseClient.js` constructor (reconnects + auto-rejoins when tab refocuses). Presence code itself was already correct (verified live).
-- **Pending:** real movie-file test / test with Kitty (should now work cross-network); store screenshots. If openrelay TURN is flaky, get a free metered.ca key (50GB/mo).
+- **Phase 5 (Together Layer) — IN PROGRESS in player:**
+  - **Voice/video call** ✅ built: `getUserMedia` cam/mic on a SEPARATE call peer connection (`callPc`) using the **perfect-negotiation** pattern (either side toggles camera anytime, no offer glare). Signals tagged `ch:"call"` vs the file P2P. Local (mirrored) + remote cam bubbles in the room sidebar + camera toggle.
+  - **Text chat** ✅ built: over the relay's existing `chat` message type; chat log + input in sidebar.
+  - Reuses Phase 3 WebRTC groundwork (signaling, STUN/TURN).
+  - **TODO:** test call+chat with Kitty (needs 2 cameras); reactions (5.3); scheduled dates (5.5); cam bubble in extension (Track A) later.
+- **Quality (answered):** Track B sends ORIGINAL file bytes → 1080p/1440p identical both sides, no re-encode. Caveat: partner must decode the codec (H.264 universal; HEVC/H.265 spotty in browsers).
+- **Pending:** real movie-file test / test with Kitty (cross-network via TURN); store screenshots. If openrelay TURN flaky, get free metered.ca key (50GB/mo).
 - **Rebuild:** icons `cd extension && node scripts/make-icons.js`; zip `node scripts/package-extension.cjs` (build/ is gitignored).
 
 <details><summary>— earlier history —</summary>
