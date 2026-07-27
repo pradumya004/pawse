@@ -4,7 +4,11 @@
 
 > **GitHub:** https://github.com/pradumya004/pawse (private). Commit author: `pradumya.official@gmail.com`. Account: `pradumya004`.
 >
-> **DEPLOY (v1):** Relay LIVE on Render (Singapore, free) → `wss://pawse-relay.onrender.com` (svc `srv-d9ji3p1l565s73fubkd0`). Player → Vercel (pending). Keep-alive → UptimeRobot (pending). Set `VITE_RELAY_WS=wss://pawse-relay.onrender.com` in Vercel.
+> **DEPLOY (v1) — LIVE ✅:**
+> - **App (player):** https://pawsetv.vercel.app (Vercel, public, `VITE_RELAY_WS=wss://pawse-relay.onrender.com`)
+> - **Relay:** `wss://pawse-relay.onrender.com` (Render Singapore free, svc `srv-d9ji3p1l565s73fubkd0`) — verified end-to-end (created room over wss)
+> - **Keep-alive:** UptimeRobot monitor #803599828 → pings /health
+> - **TODO for Track A in prod:** extension still points at localhost — update `extension/config.js` RELAY_WS + `manifest.json` host_permissions to the cloud relay, then reload.
 >
 > **⚙️ AUTO-PUSH RULE (standing authorization):** at the end of every phase, automatically `git add . && git commit && git push` — no need to ask. Commit message format: `Phase N: <summary>`.
 
