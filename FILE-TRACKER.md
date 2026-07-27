@@ -50,8 +50,8 @@
 - **Bug fixes (this round):**
   - Chat/page scroll: `#root` height:100vh + overflow hidden; stage overflow-y auto; chatlog min-height:0 → chat scrolls internally, page no longer grows.
   - A/V call not connecting: **queue call ICE candidates arriving before remote desc** (were dropped → ICE never completed). Added `play()` on stream assign + `[Pawse] call ...` console logs for debugging.
-- **Movie conversion helper (done for user):** bundled a static ffmpeg in scratchpad; converted 3 GoT S03 MKVs → browser-ready MP4 (video H.264 COPIED = lossless 1080p; English DTS→AAC stereo; +faststart) + extracted `.srt`, all in `C:\Users\gaura\Downloads\`. (Their MKVs had AC3/DTS audio browsers can't play.)
-- **Pending:** test call+chat with Sejal after hard-refresh (both START CAMERA); if call still fails, grab console `[Pawse] call` logs. store screenshots. openrelay TURN → get free metered.ca key if flaky.
+- **Format note (support/docs):** MKV files with AC3/DTS/Dolby audio play silent in browsers (no decodable audio track). Guide users to MP4 (H.264 + AAC), or `ffmpeg -i in.mkv -c:v copy -c:a aac out.mp4`.
+- **Pending:** test call+chat after hard-refresh (both START CAMERA); if call still fails, grab console `[Pawse] call` logs. Store screenshots. openrelay TURN → get free metered.ca key if flaky.
 - **Rebuild:** icons `cd extension && node scripts/make-icons.js`; zip `node scripts/package-extension.cjs` (build/ is gitignored).
 
 <details><summary>— earlier history —</summary>
