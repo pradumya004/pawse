@@ -21,6 +21,7 @@ import {
   getRoom,
   leaveClient,
   roomCount,
+  dropStaleUid,
 } from "./rooms.js";
 
 const PORT = process.env.PORT || 8080;
@@ -142,6 +143,7 @@ function handle(ws, msg) {
       ws.name = msg.name || "Guest";
       ws.uid = msg.uid || ws.id; // stable per-browser id
       joinRoom(room, ws.id, ws);
+      dropStaleUid(room, ws.uid, ws.id); // remove our own leftover socket (refresh)
       ws.roomCode = room.code;
       // Reclaim host if this browser is the room's host (by stable uid).
       const role = room.hostUid === ws.uid ? "host" : "follower";

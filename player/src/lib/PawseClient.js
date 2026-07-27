@@ -233,7 +233,13 @@ export class PawseClient {
         break;
       case "presence":
         this.partnerHere = msg.event === "joined";
-        if (msg.name) this.partnerName = msg.name;
+        if (this.partnerHere) {
+          if (msg.name) this.partnerName = msg.name;
+        } else {
+          // Partner left — clear their label + cam so no ghost lingers.
+          this.partnerName = null;
+          this.partnerCam = false;
+        }
         if (this.partnerHere && this.role === "host" && this.fileChosen) {
           // (Re)start the transfer for a partner that just (re)joined.
           this._teardown();

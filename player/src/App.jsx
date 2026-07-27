@@ -171,7 +171,11 @@ export default function App() {
                 <div className="cams">
                   <div className={"cam remote" + (s.partnerCam ? "" : " empty")}>
                     <video ref={remoteCamRef} autoPlay playsInline />
-                    {!s.partnerCam && <span className="camlabel">😿 {s.partnerName || "partner"} cam off</span>}
+                    {!s.partnerCam && (
+                      <span className="camlabel">
+                        {s.partnerHere ? `😿 ${s.partnerName || "partner"} cam off` : "waiting for partner"}
+                      </span>
+                    )}
                   </div>
                   <div className={"cam local" + (s.cameraOn ? "" : " empty")}>
                     <video ref={localCamRef} autoPlay playsInline muted />

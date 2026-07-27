@@ -91,6 +91,28 @@ export function getRoom(code) {
  * @param {import('ws').WebSocket} ws
  * @returns {object} the same room, now containing the client
  */
+/**
+ * Kick any OTHER connection in the room that shares this uid — i.e. the same
+ * browser's stale socket left over from a refresh. Prevents "seeing yourself as
+ * your own partner". We null its roomCode first so its close handler no-ops.
+ * @param {object} room
+ * @param {string} uid - the (re)joining browser's stable id
+ * @param {string} keepConnId - the new connection id to keep
+ */
+export function dropStaleUid(room, uid, keepConnId) {
+  for (const [id, client] of room.clients) {
+    if (id !== keepConnId && client.ws.uid === uid) {
+      client.ws.roomCode = null;
+      try {
+        client.ws.terminate();
+      } catch {
+        /* already gone */
+      }
+      room.clients.delete(id);
+    }
+  }
+}
+
 export function joinRoom(room, clientId, ws) {
   room.clients.set(clientId, { ws });
   // Someone's back — cancel any pending grace-period destruction.
