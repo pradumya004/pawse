@@ -26,13 +26,19 @@
 | 3 — Own-files P2P (Track B) | ✅ B1 file transfer + Meow Feed; edge bugs fixed & verified | ✅ `Phase 3 fixes...` (pending user's real-file playback test) |
 | 4 — DRM adapters | ⬜ | ⬜ |
 | 5 — Together layer (cam/chat) | ⬜ | ⬜ |
-| 6 — Polish + **DEPLOY** | 🚧 deploy configs written (render.yaml, Vercel env, DEPLOY.md); deploying now | ✅ `Deploy setup...` |
+| 6 — Polish + **DEPLOY** | ✅ **LIVE** (player Vercel + relay Render + UptimeRobot) | ✅ `v1 deployed...` |
 | 7 — Monetization (see docs/MONETIZATION.md) | ⬜ future | ⬜ |
-| 8 — Native apps / store distribution | ⬜ far future (tracked only) | ⬜ |
+| 8 — Store distribution (Chrome Web Store) | 🚧 listing prepped; awaiting user's $5 + submit | ⬜ |
 
 ## Current position
 
-- **Phase 3 slice 1 built (UNTESTED):** standalone `player/` page. Host picks a local file → streams to partner over WebRTC (captureStream / tier B2) with signaling relayed by the server (new `MSG.SIGNAL`). Play/pause/seek relayed. This proves the P2P pipeline end-to-end. **Next iteration = B1 lossless file-byte transfer + MSE for native quality** (roadmap 3.3).
+- **v1 LIVE:** app https://pawsetv.vercel.app · relay wss://pawse-relay.onrender.com · both tracks on cloud.
+- **Chrome Web Store listing PREPPED:** pixel-cat icons wired into manifest; extension packaged to `build/pawse-extension-v0.1.0.zip` (valid, forward slashes); privacy policy → https://pawsetv.vercel.app/privacy.html; listing copy in `docs/STORE-LISTING.md`. **▶ user: pay $5 dev fee → upload zip → paste copy → screenshots → submit.**
+- **Pending:** real movie-file test / test with Kitty; store screenshots.
+- **Rebuild:** icons `cd extension && node scripts/make-icons.js`; zip `node scripts/package-extension.cjs` (build/ is gitignored).
+
+<details><summary>— earlier history —</summary>
+
 - **Player = Vite + React app.** Logic in `PawseClient` (plain class); React only renders.
 - **QUALITY FIX DONE (B1):** replaced laggy captureStream with **P2P file-byte transfer** — host sends the original file over a WebRTC DataChannel (16KB chunks, backpressure); partner reassembles a Blob and plays the NATIVE file locally. Both play local copies → native quality, seekable, sync via control events. Progress bar shows transfer %. Tradeoff: partner downloads before watching (pre-load model).
 - **Meow Feed added:** rotating cat memes (meme-api.com → Reddit, CORS-ok) in lobby + while waiting/transferring. Graceful fallback if API down. Files: `src/MeowFeed.jsx`.
@@ -46,7 +52,8 @@
   5. Name UX unclear → lobby now ①name ②pick-one with hints for both paths.
 - **Known limitation:** HOST refresh loses the File (can't persist a File object) + role may migrate; host should re-create if they refresh. Documented, not fixed for v1.
 - **Next Track B:** B0 shared-file detection, subtitles, MSE play-while-downloading for huge files.
-- **▶ TO DEPLOY v1:** deploy relay to free host (Render/Fly/Railway) + player to static host (Vercel/GH Pages) + point config.js/PAWSE_CONFIG at prod URLs + extension host_permissions. This is the Phase 6 deploy step — REQUIRED before real long-distance use (all URLs are localhost now).
+
+</details>
 
 **Stack decision (locked):** extension = vanilla HTML/CSS/JS (loads unpacked). player = Vite + React (real web app; where React earns its keep). server = Node. Future paid dashboard would also be React.
 
@@ -101,18 +108,19 @@ pawse/
 │   └── scripts/
 │       └── test-client.js       ✅ CLI client to test create/join/broadcast
 │
-├── extension/                   🚧 Phase 2 — Track A (MV3, YouTube) — code done, testing
-│   ├── manifest.json            ✅ MV3 blueprint; content_scripts=[config.js, content.js]
-│   ├── config.js                ✅ central config — RELAY_WS/RELAY_HTTP in ONE place
+├── extension/                   ✅ Track A (MV3, YouTube) — on cloud relay + Web-Store-ready
+│   ├── manifest.json            ✅ MV3; icons; cloud relay host_perms; incognito split
+│   ├── config.js                ✅ central config — points at cloud relay (wss://…onrender.com)
 │   ├── background.js            ✅ SW brain: WS + media cache + persist/reconnect/leave
 │   ├── content/
 │   │   └── content.js           ✅ owns <video>; echo-suppress; buffer + video-follow; safeSend
+│   ├── icons/                   ✅ icon16/48/128.png (pixel cat, generated)
+│   │   └── icon{16,48,128}.png
+│   ├── scripts/
+│   │   └── make-icons.js        ✅ pure-Node PNG icon generator (no deps)
 │   └── popup/
-│       ├── popup.html           ✅ pixel UI: create/join/leave, room box, partner box
-│       ├── popup.js             ✅ create/join/leave wiring, presence + lobby/room views
-│       ├── popup.css            ✅ "Cream & Ginger" pixel theme, overflow-safe
-│       └── fonts/
-│           └── PressStart2P.ttf ✅ bundled 8-bit font (OFL)
+│       ├── popup.html/js/css    ✅ pixel UI (create/join/leave, presence)
+│       └── fonts/PressStart2P.ttf ✅ bundled 8-bit font (OFL)
 ├── player/                      🚧 Phase 3 — Track B (own-files P2P player) — VITE + REACT
 │   ├── package.json             ✅ scripts: dev / build / preview; deps react + vite
 │   ├── vite.config.js           ✅ React plugin, dev server port 5173

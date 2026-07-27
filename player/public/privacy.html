@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pawse — Privacy Policy</title>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 720px; margin: 40px auto; padding: 0 20px; color: #2a2438; background: #f4ecd8; line-height: 1.7; }
+      h1 { color: #ef7d1a; } h2 { margin-top: 28px; }
+      code { background: #fff; padding: 1px 5px; border: 1px solid #e7dabc; }
+      a { color: #e85d86; }
+      .muted { color: #7a6f5d; font-size: 14px; }
+    </style>
+  </head>
+  <body>
+    <h1>🐾 Pawse — Privacy Policy</h1>
+    <p class="muted">Last updated: 2026-07-27</p>
+
+    <p>
+      Pawse is a watch-together tool for two people. It is built to sync video playback between you and one
+      partner. This policy explains, plainly, what it does and does not do with your data.
+    </p>
+
+    <h2>What Pawse handles</h2>
+    <ul>
+      <li><strong>A display name you type</strong> — shown to your partner in the room. You choose it; it's optional.</li>
+      <li><strong>Room codes</strong> — a short code that pairs you with your partner.</li>
+      <li><strong>Playback events</strong> — play, pause, seek, and which video/timestamp you're on — relayed to your
+        partner so you stay in sync.</li>
+      <li><strong>For your own files</strong> — the movie file is streamed <strong>directly to your partner</strong>
+        (peer-to-peer via WebRTC). It is <strong>never uploaded to us</strong> or stored on any server.</li>
+    </ul>
+
+    <h2>What we do NOT do</h2>
+    <ul>
+      <li>We do <strong>not</strong> sell or share your data with advertisers or any third party.</li>
+      <li>We do <strong>not</strong> run analytics, tracking pixels, or profiling.</li>
+      <li>We do <strong>not</strong> require an account, email, or password.</li>
+      <li>We do <strong>not</strong> store your playback history or files.</li>
+    </ul>
+
+    <h2>How data flows</h2>
+    <p>
+      Playback events pass through our relay server (<code>pawse-relay.onrender.com</code>) only to forward them to
+      the other person in your room, in real time. They are not persisted. Rooms live in memory and disappear when
+      empty. Your display name and last room code are stored <strong>locally in your own browser</strong> for
+      convenience and never leave your device except to pair you with your partner.
+    </p>
+
+    <h2>Third-party content</h2>
+    <p>
+      The optional "Meow Feed" (cat memes shown while you wait) fetches images from a public meme API
+      (<code>meme-api.com</code>, which relays Reddit content). No personal data is sent to it.
+    </p>
+
+    <h2>Permissions the extension asks for</h2>
+    <ul>
+      <li><strong>storage</strong> — remember your name and room locally.</li>
+      <li><strong>tabs</strong> — know which tab holds the video to sync.</li>
+      <li><strong>Access to youtube.com</strong> — read and control the video player so it can sync.</li>
+      <li><strong>Access to our relay</strong> — open the sync connection.</li>
+    </ul>
+
+    <h2>Contact</h2>
+    <p>Questions? Email <a href="mailto:pradumya.official@gmail.com">pradumya.official@gmail.com</a>.</p>
+  </body>
+</html>

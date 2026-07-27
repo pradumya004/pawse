@@ -181,12 +181,12 @@ Live-streaming native quality in real time only stays smooth if **host upload sp
 
 ---
 
-## Phase 8 — Native App & Store Distribution (far future — noted, not scheduled)
+## Phase 8 — Store Distribution
 
-- Wrap the player as a desktop app (Electron/Tauri) and/or mobile (Capacitor/React Native) for own-files mode outside the browser.
-- Publish: Chrome Web Store (extension), Microsoft Store / Mac App Store (desktop), Play Store / App Store (mobile).
+- 🚧 **Chrome Web Store (extension) — listing prepped, submission pending.** Icons (16/48/128) generated + in manifest; package `build/pawse-extension-v0.1.0.zip` (valid, forward slashes); privacy policy at https://pawsetv.vercel.app/privacy.html; listing copy in [docs/STORE-LISTING.md](docs/STORE-LISTING.md). User pays one-time $5 dev fee, uploads zip, adds screenshots, submits (~days–2wk review).
+- ⬜ Desktop app (Electron/Tauri) + mobile (Capacitor/React Native) for own-files mode — far future, after real users.
+- ⬜ Microsoft/Mac App Store, Play/App Store — far future.
 - All legal: own-files + user's own accounts only; no bundled content, no DRM circumvention.
-- **Just tracked for now.** Don't build until the web/extension product has real users.
 
 ---
 

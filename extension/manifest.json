@@ -1,12 +1,23 @@
 {
   "manifest_version": 3,
-  "name": "Pawse",
+  "name": "Pawse — Watch Together",
   "version": "0.1.0",
-  "description": "Watch together, purr-fectly in sync.",
+  "description": "Watch YouTube together in perfect sync with your partner. Play, pause, and seek as one. Purr-fectly synced. 🐾",
+
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
 
   "action": {
     "default_popup": "popup/popup.html",
-    "default_title": "Pawse"
+    "default_title": "Pawse — Watch Together",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
   },
 
   "background": {
