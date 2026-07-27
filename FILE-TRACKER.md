@@ -47,7 +47,11 @@
   - **TODO:** test call+chat with Kitty (needs 2 cameras); reactions (5.3); scheduled dates (5.5); cam bubble in extension (Track A) later.
 - **⚠️ CODEC LIMITATION (not a bug — document/guide users):** "no sound + dead volume" = the file's audio is **AC3/E-AC3/DTS (Dolby/DTS)**, which browsers CANNOT decode (they only do AAC/MP3/Opus/Vorbis/FLAC). Common in dual-audio movie MKVs. Fix: use MP4 (H.264 + AAC) or `ffmpeg -i in.mkv -c:v copy -c:a aac out.mp4`. Added a host hint in the UI. Multi-audio-track switching also not feasible in-browser.
 - **Quality (answered):** Track B sends ORIGINAL file bytes → 1080p/1440p identical both sides, no re-encode. Caveat: partner must decode the codec (H.264 universal; HEVC/H.265 spotty in browsers).
-- **Pending:** real movie-file test / test with Kitty (cross-network via TURN); store screenshots. If openrelay TURN flaky, get free metered.ca key (50GB/mo).
+- **Bug fixes (this round):**
+  - Chat/page scroll: `#root` height:100vh + overflow hidden; stage overflow-y auto; chatlog min-height:0 → chat scrolls internally, page no longer grows.
+  - A/V call not connecting: **queue call ICE candidates arriving before remote desc** (were dropped → ICE never completed). Added `play()` on stream assign + `[Pawse] call ...` console logs for debugging.
+- **Movie conversion helper (done for user):** bundled a static ffmpeg in scratchpad; converted 3 GoT S03 MKVs → browser-ready MP4 (video H.264 COPIED = lossless 1080p; English DTS→AAC stereo; +faststart) + extracted `.srt`, all in `C:\Users\gaura\Downloads\`. (Their MKVs had AC3/DTS audio browsers can't play.)
+- **Pending:** test call+chat with Sejal after hard-refresh (both START CAMERA); if call still fails, grab console `[Pawse] call` logs. store screenshots. openrelay TURN → get free metered.ca key if flaky.
 - **Rebuild:** icons `cd extension && node scripts/make-icons.js`; zip `node scripts/package-extension.cjs` (build/ is gitignored).
 
 <details><summary>— earlier history —</summary>
