@@ -17,10 +17,10 @@
 | 0 — Foundations / docs | ✅ done | ✅ |
 | 1 — Sync relay server | ✅ **COMPLETE & VERIFIED** | ✅ `Phase 1: sync relay server + project docs` |
 | 2 — Extension (Track A, YouTube) | ✅ working (user-confirmed) | ✅ `Phase 2 polish...` |
-| 3 — Own-files P2P (Track B) | 🚧 slice 1 built (captureStream); testing | ⬜ |
+| 3 — Own-files P2P (Track B) | ✅ B1 file transfer + Meow Feed; edge bugs fixed & verified | ✅ `Phase 3 fixes...` (pending user's real-file playback test) |
 | 4 — DRM adapters | ⬜ | ⬜ |
 | 5 — Together layer (cam/chat) | ⬜ | ⬜ |
-| 6 — Polish + deploy | ⬜ | ⬜ |
+| 6 — Polish + **DEPLOY** | 🚧 deploy configs written (render.yaml, Vercel env, DEPLOY.md); deploying now | ✅ `Deploy setup...` |
 | 7 — Monetization (see docs/MONETIZATION.md) | ⬜ future | ⬜ |
 | 8 — Native apps / store distribution | ⬜ far future (tracked only) | ⬜ |
 
