@@ -8,7 +8,7 @@
 > - **App (player):** https://pawsetv.vercel.app (Vercel, public, `VITE_RELAY_WS=wss://pawse-relay.onrender.com`)
 > - **Relay:** `wss://pawse-relay.onrender.com` (Render Singapore free, svc `srv-d9ji3p1l565s73fubkd0`) — verified end-to-end (created room over wss)
 > - **Keep-alive:** UptimeRobot monitor #803599828 → pings /health
-> - **TODO for Track A in prod:** extension still points at localhost — update `extension/config.js` RELAY_WS + `manifest.json` host_permissions to the cloud relay, then reload.
+> - **Extension (Track A):** ✅ now points at cloud relay (`extension/config.js` = wss://pawse-relay.onrender.com; manifest host_permissions include it, localhost kept for dev). Reload the unpacked extension to apply. For Kitty: send her the `extension/` folder to load unpacked (Web Store listing = later).
 >
 > **⚙️ AUTO-PUSH RULE (standing authorization):** at the end of every phase, automatically `git add . && git commit && git push` — no need to ask. Commit message format: `Phase N: <summary>`.
 
