@@ -1,34 +1,54 @@
 /**
  * @file src/MeowFeed.jsx
- * The "Meow Feed" — a rotating stream of fresh cat memes to keep the waiting
- * moments cute (lobby, waiting for partner, during a file transfer).
- *
- * Source: meme-api.com proxies Reddit's cat subreddits and adds CORS, so we can
- * fetch it straight from the browser (Reddit's own API blocks cross-origin).
- * If it's unreachable, we degrade gracefully to a cute placeholder.
+ * The "Meow Feed" — a rotating stream of fresh cat content (images, GIFs, and
+ * videos) to keep the waiting moments cute. Pulls from several cat subreddits
+ * via meme-api.com (which proxies Reddit + adds CORS). Degrades gracefully.
  */
 import { useEffect, useState } from "react";
 
-const SUBS = ["catmemes", "cats", "catpics", "IllegallySmolCats"];
+// The good stuff. We pull from a couple of these at random each load.
+const SUBS = [
+  "Catmemes",
+  "funnycats",
+  "sillycats",
+  "CatReacts",
+  "WhatsWrongWithYourCat",
+  "WhyCatHowCat",
+  "cats",
+  "catpics",
+];
+
+const isVid = (u) => /\.(mp4|webm)$/i.test(u);
+const isMedia = (u) => /\.(jpg|jpeg|png|webp|gif|mp4|webm)$/i.test(u);
+
+function pickTwo() {
+  const a = Math.floor(Math.random() * SUBS.length);
+  let b = Math.floor(Math.random() * SUBS.length);
+  if (b === a) b = (b + 1) % SUBS.length;
+  return [SUBS[a], SUBS[b]];
+}
 
 export default function MeowFeed({ caption = "while you wait..." }) {
-  const [memes, setMemes] = useState([]);
+  const [items, setItems] = useState([]);
   const [i, setI] = useState(0);
 
-  // Fetch a batch of cat memes once.
+  // Fetch a batch from two random cat subreddits.
   useEffect(() => {
-    const sub = SUBS[Math.floor((Date.now() / 60000) % SUBS.length)];
     let alive = true;
-    fetch(`https://meme-api.com/gimme/${sub}/30`)
-      .then((r) => r.json())
-      .then((d) => {
-        if (!alive) return;
-        const urls = (d.memes || [])
-          .filter((m) => m && m.url && !m.nsfw && /\.(jpg|jpeg|png|gif)$/i.test(m.url))
-          .map((m) => ({ url: m.url, title: m.title }));
-        setMemes(urls);
-      })
-      .catch(() => {});
+    Promise.all(
+      pickTwo().map((sub) =>
+        fetch(`https://meme-api.com/gimme/${sub}/25`)
+          .then((r) => r.json())
+          .catch(() => ({ memes: [] })),
+      ),
+    ).then((results) => {
+      if (!alive) return;
+      const media = results
+        .flatMap((d) => d.memes || [])
+        .filter((m) => m && m.url && !m.nsfw && isMedia(m.url))
+        .map((m) => ({ url: m.url, title: m.title, sub: m.subreddit }));
+      setItems(media);
+    });
     return () => {
       alive = false;
     };
@@ -36,27 +56,33 @@ export default function MeowFeed({ caption = "while you wait..." }) {
 
   // Rotate through them.
   useEffect(() => {
-    if (memes.length < 2) return;
-    const t = setInterval(() => setI((x) => (x + 1) % memes.length), 4500);
+    if (items.length < 2) return;
+    const t = setInterval(() => setI((x) => (x + 1) % items.length), 5000);
     return () => clearInterval(t);
-  }, [memes]);
+  }, [items]);
 
-  if (!memes.length) {
+  if (!items.length) {
     return (
       <div className="meow">
-        <div className="meowframe meowempty">=^• ⩊ •^=</div>
+        <div className="meowframe meowempty">
+          =^･ ⩊ ･^=<br />loading cats…
+        </div>
         <div className="meowcap">{caption}</div>
       </div>
     );
   }
 
-  const m = memes[i];
+  const m = items[i];
   return (
     <div className="meow">
       <div className="meowframe">
-        <img src={m.url} alt={m.title || "cat meme"} className="meowimg" />
+        {isVid(m.url) ? (
+          <video className="meowimg" src={m.url} autoPlay muted loop playsInline />
+        ) : (
+          <img className="meowimg" src={m.url} alt={m.title || "cat"} loading="lazy" />
+        )}
       </div>
-      <div className="meowcap">🐾 {caption}</div>
+      <div className="meowcap">🐾 {caption}{m.sub ? ` · r/${m.sub}` : ""}</div>
     </div>
   );
 }

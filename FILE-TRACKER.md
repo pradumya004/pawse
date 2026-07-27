@@ -34,7 +34,11 @@
 
 - **v1 LIVE:** app https://pawsetv.vercel.app · relay wss://pawse-relay.onrender.com · both tracks on cloud.
 - **Chrome Web Store listing PREPPED:** pixel-cat icons wired into manifest; extension packaged to `build/pawse-extension-v0.1.0.zip` (valid, forward slashes); privacy policy → https://pawsetv.vercel.app/privacy.html; listing copy in `docs/STORE-LISTING.md`. **▶ user: pay $5 dev fee → upload zip → paste copy → screenshots → submit.**
-- **Pending:** real movie-file test / test with Kitty; store screenshots.
+- **UI overhaul (done):** responsive full-width two-column layout (lobby: card+meowfeed; room: video+sidebar), paw-print bg, cuter typography/taglines. MeowFeed now pulls from 8 cat subreddits (Catmemes/funnycats/sillycats/CatReacts/WhatsWrongWithYourCat/WhyCatHowCat/cats/catpics) and supports images + GIFs + videos.
+- **⚠️ REAL-SESSION BUGS (from gf test) — fixes assigned to USER to learn (I gave exact file+lines):**
+  1. **No video across networks = missing TURN.** Fix in `player/src/config.js` ICE_SERVERS: add a TURN server (openrelay.metered.ca or free metered.ca key). STUN-only fails cross-ISP/mobile NAT. **This is the critical fix.**
+  2. **"waiting for partner" = her WS dropped (tab backgrounded).** Presence code is correct (verified live). Fix: add a `visibilitychange` reconnect listener in `player/src/lib/PawseClient.js` constructor.
+- **Pending:** user applies the 2 fixes above; real movie-file test / test with Kitty; store screenshots.
 - **Rebuild:** icons `cd extension && node scripts/make-icons.js`; zip `node scripts/package-extension.cjs` (build/ is gitignored).
 
 <details><summary>— earlier history —</summary>
