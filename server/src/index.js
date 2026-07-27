@@ -121,7 +121,8 @@ function handle(ws, msg) {
     // "Make a new room, I'm the host."
     case MSG.CREATE: {
       ws.name = msg.name || "Guest";
-      const room = createRoom(ws.id, ws);
+      ws.uid = msg.uid || ws.id; // stable per-browser id (survives refresh)
+      const room = createRoom(ws);
       if (!room) {
         send(ws, MSG.ERROR, { reason: "server_full" });
         return;
@@ -139,9 +140,11 @@ function handle(ws, msg) {
         return;
       }
       ws.name = msg.name || "Guest";
+      ws.uid = msg.uid || ws.id; // stable per-browser id
       joinRoom(room, ws.id, ws);
       ws.roomCode = room.code;
-      const role = room.hostId === ws.id ? "host" : "follower";
+      // Reclaim host if this browser is the room's host (by stable uid).
+      const role = room.hostUid === ws.uid ? "host" : "follower";
       // Hand the joiner the current playback state AND tell them the partner is
       // already here (the fix: the joiner previously never learned this).
       send(ws, MSG.ROOM, {

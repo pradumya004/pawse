@@ -30,6 +30,12 @@ export class PawseClient {
     this.room = null;
     this.role = null; // "host" | "follower"
     this.myName = localStorage.getItem("pawse_name") || "Guest";
+    // Stable per-browser id (survives refresh) so the host reclaims host on rejoin.
+    this.uid = localStorage.getItem("pawse_uid");
+    if (!this.uid) {
+      this.uid = (crypto.randomUUID && crypto.randomUUID()) || "u" + Date.now() + Math.random().toString(36).slice(2);
+      localStorage.setItem("pawse_uid", this.uid);
+    }
     this.partnerHere = false;
     this.partnerName = null;
     this.status = "connecting";
@@ -130,7 +136,7 @@ export class PawseClient {
       this.reconnectDelay = 1000;
       // Auto-rejoin a persisted room (refresh / reconnect).
       const saved = localStorage.getItem("pawse_room");
-      if (saved && !this.room) this._send("join", { room: saved, name: this.myName });
+      if (saved && !this.room) this._send("join", { room: saved, name: this.myName, uid: this.uid });
       this._emit();
     };
     this.ws.onclose = () => {
@@ -167,12 +173,12 @@ export class PawseClient {
   create(name) {
     this.myName = name || "Guest";
     localStorage.setItem("pawse_name", this.myName);
-    this._send("create", { name: this.myName });
+    this._send("create", { name: this.myName, uid: this.uid });
   }
   join(code, name) {
     this.myName = name || "Guest";
     localStorage.setItem("pawse_name", this.myName);
-    this._send("join", { room: code, name: this.myName });
+    this._send("join", { room: code, name: this.myName, uid: this.uid });
   }
   leave() {
     this._send("leave");

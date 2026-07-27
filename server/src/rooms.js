@@ -12,7 +12,7 @@ import { randomInt } from "node:crypto";
 
 /**
  * The whole registry: room code -> room object.
- * A room object is: { code, hostId, clients: Map<id, {ws}>, state, createdAt }
+ * A room object is: { code, hostUid, clients: Map<connId, {ws}>, state, createdAt }
  * @type {Map<string, object>}
  */
 const rooms = new Map();
@@ -47,18 +47,19 @@ function generateCode() {
 }
 
 /**
- * Create a brand-new room with the given client as its host.
- * @param {string} hostId - the creator's client id
- * @param {import('ws').WebSocket} ws - the creator's socket
- * @returns {object} the new room object (its `.code` is the shareable code)
+ * Create a brand-new room. The creator becomes host (by their stable `ws.uid`).
+ * @param {import('ws').WebSocket} ws - the creator's socket (must have .uid + .id)
+ * @returns {object|null} the new room, or null if the server room cap is hit
  */
-export function createRoom(hostId, ws) {
+export function createRoom(ws) {
   if (rooms.size >= MAX_ROOMS) return null; // public-relay safety cap
   const code = generateCode();
   const room = {
+    // Host is identified by a STABLE per-browser uid (survives refresh), NOT the
+    // ephemeral connection id — so a host who refreshes reclaims host on rejoin.
+    hostUid: ws.uid,
     code,
-    hostId,
-    clients: new Map([[hostId, { ws }]]),
+    clients: new Map([[ws.id, { ws }]]),
     // Last known playback state. Handed to whoever joins next so a late joiner
     // lands on the right video AND at the right timestamp.
     state: {
@@ -114,10 +115,8 @@ export function leaveClient(code, clientId) {
 
   room.clients.delete(clientId);
 
-  // Host migration: promote whoever's left so the room still has a source of truth.
-  if (room.hostId === clientId) {
-    room.hostId = room.clients.keys().next().value || null;
-  }
+  // NOTE: host is tracked by stable `hostUid`, so we do NOT migrate/reassign it
+  // on disconnect. The host reclaims their role by uid when they rejoin.
 
   // Empty room -> DON'T destroy immediately. Hold it for a grace period so an
   // accidental refresh or a brief network drop can rejoin the same code. If
