@@ -13,6 +13,7 @@
  * Each of those sets the same global below.
  */
 globalThis.PAWSE_CONFIG = {
-  RELAY_WS: "ws://localhost:8080", // WebSocket endpoint of the relay server
-  RELAY_HTTP: "http://localhost:8080", // HTTP endpoint (used for /health)
+  // Production cloud relay (Render). For local dev, swap to ws://localhost:8080.
+  RELAY_WS: "wss://pawse-relay.onrender.com", // WebSocket endpoint of the relay server
+  RELAY_HTTP: "https://pawse-relay.onrender.com", // HTTP endpoint (used for /health)
 };
