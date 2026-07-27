@@ -135,15 +135,16 @@ body {
   flex: 1;
   min-height: 0;
   display: flex;
-  align-items: center;
+  align-items: stretch; /* let the room FILL the height (video = hero) */
   justify-content: center;
-  padding: 22px;
+  padding: 16px;
 }
 
 /* ---------- LOBBY ---------- */
 .lobbyGrid {
   width: 100%;
   max-width: 1080px;
+  margin: auto; /* center the lobby (stage no longer centers for us) */
   display: grid;
   grid-template-columns: 420px 1fr;
   gap: 44px;
@@ -284,11 +285,10 @@ body {
 /* ---------- ROOM ---------- */
 .roomWrap {
   width: 100%;
-  max-width: 1400px;
-  height: 100%;
+  max-width: 1600px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 .roombar {
@@ -318,13 +318,13 @@ body {
 .partner.active { color: var(--ink); border: 2px solid var(--pink); }
 .leave { margin-left: auto; }
 
-/* two-column room: video fills, sidebar holds the meow feed */
+/* two-column room: video is the hero, slim sidebar holds cams + chat */
 .roomGrid {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: 16px;
+  grid-template-columns: 1fr 330px;
+  gap: 14px;
 }
 
 .stageMain {
@@ -345,6 +345,7 @@ body {
   gap: 12px;
 }
 
+.roomtools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .filepick { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 .filebtn { display: inline-block; }
 .filename { font-size: 8px; color: var(--ink-soft); word-break: break-all; }
@@ -373,7 +374,7 @@ body {
 .videowrap {
   position: relative;
   flex: 1;
-  min-height: 240px;
+  min-height: 0; /* fill all remaining height — big video */
   background: #000;
   border: 3px solid var(--ink);
   box-shadow: 6px 6px 0 rgba(42, 36, 56, 0.35);
@@ -459,12 +460,12 @@ body {
 .cams {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 8px;
 }
 
 .cam {
   position: relative;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 1 / 1;
   background: #000;
   border: 3px solid var(--ink);
   overflow: hidden;

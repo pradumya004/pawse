@@ -15,7 +15,7 @@ export default function App() {
   const [s, setS] = useState({
     status: "connecting", room: null, role: null, partnerHere: false, partnerName: null,
     fileName: null, hint: "", progress: 0, transfer: "idle",
-    cameraOn: false, partnerCam: false, messages: [],
+    cameraOn: false, partnerCam: false, messages: [], subsOn: false,
   });
   const [name, setName] = useState(localStorage.getItem("pawse_name") || "");
   const [code, setCode] = useState("");
@@ -58,6 +58,7 @@ export default function App() {
   const onJoin = () => { if (!code.trim()) return; saveName(); clientRef.current.join(code.trim().toUpperCase(), name.trim()); };
   const onLeave = () => clientRef.current.leave();
   const onFile = (e) => { const f = e.target.files[0]; if (f) clientRef.current.chooseFile(f); };
+  const onSubs = (e) => { const f = e.target.files[0]; if (f) clientRef.current.addSubtitles(f); };
   const onCopy = () => { navigator.clipboard.writeText(s.room); setCopied(true); setTimeout(() => setCopied(false), 1200); };
   const toggleCam = () => (s.cameraOn ? clientRef.current.stopCamera() : clientRef.current.startCamera());
   const sendChat = (e) => { e.preventDefault(); clientRef.current.sendChat(chatText); setChatText(""); };
@@ -128,13 +129,17 @@ export default function App() {
 
             <div className="roomGrid">
               <section className="stageMain">
-                {isHost && (
-                  <div className="filepick">
-                    <label htmlFor="file" className="btn primary filebtn">🎬 CHOOSE A MOVIE FILE</label>
-                    <input id="file" type="file" accept="video/*" hidden onChange={onFile} />
-                    {s.fileName && <span className="filename">🎞️ {s.fileName}</span>}
-                  </div>
-                )}
+                <div className="roomtools">
+                  {isHost && (
+                    <>
+                      <label htmlFor="file" className="btn small primary">🎬 CHOOSE MOVIE</label>
+                      <input id="file" type="file" accept="video/*" hidden onChange={onFile} />
+                    </>
+                  )}
+                  <label htmlFor="subs" className="btn small">💬 {s.subsOn ? "SUBTITLES ✓" : "ADD SUBTITLES"}</label>
+                  <input id="subs" type="file" accept=".srt,.vtt" hidden onChange={onSubs} />
+                  {s.fileName && <span className="filename">🎞️ {s.fileName}</span>}
+                </div>
 
                 {transferring && (
                   <div className="progress">

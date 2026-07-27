@@ -61,6 +61,7 @@ export class PawseClient {
     this.makingOffer = false; // perfect-negotiation flags (avoid offer glare)
     this.ignoreOffer = false;
     this.messages = []; // chat log: { mine, text }
+    this.subsOn = false; // are external subtitles loaded?
 
     // Phones/browsers SUSPEND background tabs, which silently drops the socket.
     // When the tab comes back to the foreground, reconnect if we're not open —
@@ -107,6 +108,7 @@ export class PawseClient {
       cameraOn: this.cameraOn,
       partnerCam: this.partnerCam,
       messages: this.messages,
+      subsOn: this.subsOn,
     });
   }
 
@@ -530,6 +532,38 @@ export class PawseClient {
     this.localCall = null;
     if (this.onLocalStream) this.onLocalStream(null);
     this.cameraOn = false;
+    this._emit();
+  }
+
+  /**
+   * Load an external subtitle file (.srt or .vtt) onto the movie. Runs locally
+   * per side — each person loads their own copy. Browsers only render WebVTT,
+   * so we convert SRT -> VTT (add header + turn comma decimals into dots).
+   * @param {File} file
+   */
+  async addSubtitles(file) {
+    if (!this.video || !file) return;
+    let text = await file.text();
+    if (!/^WEBVTT/.test(text.trimStart())) {
+      text =
+        "WEBVTT\n\n" +
+        text.replace(/\r/g, "").replace(/(\d\d:\d\d:\d\d),(\d\d\d)/g, "$1.$2");
+    }
+    const url = URL.createObjectURL(new Blob([text], { type: "text/vtt" }));
+    this.video.querySelectorAll("track").forEach((t) => t.remove()); // replace old
+    const track = document.createElement("track");
+    track.kind = "subtitles";
+    track.label = "Subtitles";
+    track.srclang = "en";
+    track.src = url;
+    track.default = true;
+    this.video.appendChild(track);
+    // Give the browser a tick to register the track, then show it.
+    setTimeout(() => {
+      const tt = this.video.textTracks[0];
+      if (tt) tt.mode = "showing";
+    }, 100);
+    this.subsOn = true;
     this._emit();
   }
 }
