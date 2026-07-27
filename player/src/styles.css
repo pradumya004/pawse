@@ -346,6 +346,8 @@ body {
 }
 
 .roomtools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.tinyhint.fmt { text-align: left; margin: 0; line-height: 1.9; }
+.tinyhint.fmt code { background: var(--panel); padding: 1px 5px; border: 1px solid var(--ink-soft); font-size: 9px; }
 .filepick { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 .filebtn { display: inline-block; }
 .filename { font-size: 8px; color: var(--ink-soft); word-break: break-all; }

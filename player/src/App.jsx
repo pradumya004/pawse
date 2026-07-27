@@ -140,6 +140,12 @@ export default function App() {
                   <input id="subs" type="file" accept=".srt,.vtt" hidden onChange={onSubs} />
                   {s.fileName && <span className="filename">🎞️ {s.fileName}</span>}
                 </div>
+                {isHost && (
+                  <div className="tinyhint fmt">
+                    ⚠️ no sound? your file likely has AC3/DTS/Dolby audio (browsers can't play it).
+                    use MP4 with AAC audio, or re-encode: <code>ffmpeg -i in.mkv -c:v copy -c:a aac out.mp4</code>
+                  </div>
+                )}
 
                 {transferring && (
                   <div className="progress">
