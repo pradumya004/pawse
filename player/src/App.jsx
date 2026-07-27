@@ -31,8 +31,12 @@ export default function App() {
   useEffect(() => {
     const c = new PawseClient({
       onState: setS,
-      onLocalStream: (stream) => { if (localCamRef.current) localCamRef.current.srcObject = stream; },
-      onRemoteStream: (stream) => { if (remoteCamRef.current) remoteCamRef.current.srcObject = stream; },
+      onLocalStream: (stream) => {
+        if (localCamRef.current) { localCamRef.current.srcObject = stream; localCamRef.current.play?.().catch(() => {}); }
+      },
+      onRemoteStream: (stream) => {
+        if (remoteCamRef.current) { remoteCamRef.current.srcObject = stream; remoteCamRef.current.play?.().catch(() => {}); }
+      },
     });
     clientRef.current = c;
     c.connect();

@@ -41,9 +41,10 @@ body {
 }
 
 #root {
-  min-height: 100vh;
+  height: 100vh; /* fixed to the viewport so inner panels scroll, not the page */
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .scanlines {
@@ -138,6 +139,7 @@ body {
   align-items: stretch; /* let the room FILL the height (video = hero) */
   justify-content: center;
   padding: 16px;
+  overflow-y: auto; /* lobby can scroll on tiny screens; the room fits exactly */
 }
 
 /* ---------- LOBBY ---------- */
@@ -324,6 +326,7 @@ body {
   min-height: 0;
   display: grid;
   grid-template-columns: 1fr 330px;
+  grid-template-rows: minmax(0, 1fr); /* bound row height so the sidebar can scroll */
   gap: 14px;
 }
 
@@ -336,7 +339,8 @@ body {
 
 .sidebar {
   min-width: 0;
-  overflow-y: auto;
+  min-height: 0; /* allow it to be bounded by the grid row (so chat scrolls) */
+  overflow: hidden;
   border: 3px solid var(--ink);
   background: var(--panel);
   padding: 14px;
@@ -507,7 +511,7 @@ body {
 
 .chat {
   flex: 1;
-  min-height: 120px;
+  min-height: 0; /* bounded by the sidebar so the log scrolls instead of growing */
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -518,7 +522,7 @@ body {
 
 .chatlog {
   flex: 1;
-  min-height: 80px;
+  min-height: 0; /* the actual scroll region */
   overflow-y: auto;
   display: flex;
   flex-direction: column;

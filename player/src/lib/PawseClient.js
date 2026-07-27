@@ -60,6 +60,7 @@ export class PawseClient {
     this.partnerCam = false; // is the partner's camera stream flowing?
     this.makingOffer = false; // perfect-negotiation flags (avoid offer glare)
     this.ignoreOffer = false;
+    this.pendingCall = []; // call ICE candidates that arrived before remote desc
     this.messages = []; // chat log: { mine, text }
     this.subsOn = false; // are external subtitles loaded?
 
@@ -457,13 +458,19 @@ export class PawseClient {
   _ensureCallPc() {
     if (this.callPc) return this.callPc;
     const pc = new RTCPeerConnection({ iceServers: PAWSE_CONFIG.ICE_SERVERS });
+    this.pendingCall = [];
     // The "impolite" peer (host) wins collisions; the "polite" one (follower) yields.
     this._polite = this.role !== "host";
 
     pc.onicecandidate = (e) => {
       if (e.candidate) this._signal({ ch: "call", candidate: e.candidate });
     };
+    pc.oniceconnectionstatechange = () =>
+      console.log("[Pawse] call ICE:", pc.iceConnectionState);
+    pc.onconnectionstatechange = () =>
+      console.log("[Pawse] call conn:", pc.connectionState);
     pc.ontrack = (e) => {
+      console.log("[Pawse] call ontrack — partner stream in");
       this.partnerCam = true;
       if (this.onRemoteStream) this.onRemoteStream(e.streams[0]);
       this._emit();
@@ -494,15 +501,31 @@ export class PawseClient {
         this.ignoreOffer = !this._polite && offerCollision;
         if (this.ignoreOffer) return; // impolite peer ignores a colliding offer
         await pc.setRemoteDescription(data.desc);
+        // Now that a remote description exists, flush any ICE that arrived early.
+        for (const c of this.pendingCall) {
+          try {
+            await pc.addIceCandidate(c);
+          } catch {
+            /* ignore */
+          }
+        }
+        this.pendingCall = [];
         if (data.desc.type === "offer") {
           await pc.setLocalDescription(); // implicit answer
           this._signal({ ch: "call", desc: pc.localDescription });
         }
       } else if (data.candidate) {
-        try {
-          await pc.addIceCandidate(data.candidate);
-        } catch (err) {
-          if (!this.ignoreOffer) throw err;
+        // Candidates can arrive before the remote description is set — if so,
+        // QUEUE them and add after setRemoteDescription (this was the bug: they
+        // were being dropped, so ICE never completed and the call never connected).
+        if (pc.remoteDescription && pc.remoteDescription.type) {
+          try {
+            await pc.addIceCandidate(data.candidate);
+          } catch (err) {
+            if (!this.ignoreOffer) console.warn("[Pawse] call ICE add failed", err);
+          }
+        } else {
+          this.pendingCall.push(data.candidate);
         }
       }
     } catch (err) {
