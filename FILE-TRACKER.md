@@ -42,7 +42,10 @@
   - **Voice/video call** ✅ built: `getUserMedia` cam/mic on a SEPARATE call peer connection (`callPc`) using the **perfect-negotiation** pattern (either side toggles camera anytime, no offer glare). Signals tagged `ch:"call"` vs the file P2P. Local (mirrored) + remote cam bubbles in the room sidebar + camera toggle.
   - **Text chat** ✅ built: over the relay's existing `chat` message type; chat log + input in sidebar.
   - Reuses Phase 3 WebRTC groundwork (signaling, STUN/TURN).
+  - **Layout fixed:** movie is now the hero (fills height; `.stage` was centering, now stretches); bigger cam bubbles; slim sidebar.
+  - **Subtitles:** external `.srt`/`.vtt` supported (SRT auto-converted to WebVTT), per-side, via "ADD SUBTITLES" button. Embedded MKV subs NOT possible in browser.
   - **TODO:** test call+chat with Kitty (needs 2 cameras); reactions (5.3); scheduled dates (5.5); cam bubble in extension (Track A) later.
+- **⚠️ CODEC LIMITATION (not a bug — document/guide users):** "no sound + dead volume" = the file's audio is **AC3/E-AC3/DTS (Dolby/DTS)**, which browsers CANNOT decode (they only do AAC/MP3/Opus/Vorbis/FLAC). Common in dual-audio movie MKVs. Fix: use MP4 (H.264 + AAC) or `ffmpeg -i in.mkv -c:v copy -c:a aac out.mp4`. Added a host hint in the UI. Multi-audio-track switching also not feasible in-browser.
 - **Quality (answered):** Track B sends ORIGINAL file bytes → 1080p/1440p identical both sides, no re-encode. Caveat: partner must decode the codec (H.264 universal; HEVC/H.265 spotty in browsers).
 - **Pending:** real movie-file test / test with Kitty (cross-network via TURN); store screenshots. If openrelay TURN flaky, get free metered.ca key (50GB/mo).
 - **Rebuild:** icons `cd extension && node scripts/make-icons.js`; zip `node scripts/package-extension.cjs` (build/ is gitignored).
