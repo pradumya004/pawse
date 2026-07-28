@@ -284,6 +284,13 @@ body {
   margin-top: -3px;
 }
 
+/* name-required nudge (P0-5 fix) */
+.tinyhint.nameerr {
+  color: var(--pink);
+  font-size: 8px;
+  margin-top: 2px;
+}
+
 .divider {
   display: flex;
   align-items: center;

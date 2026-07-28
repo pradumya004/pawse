@@ -134,9 +134,13 @@ export class PawseClient {
     this.ws.onopen = () => {
       this.status = "connected";
       this.reconnectDelay = 1000;
-      // Auto-rejoin a persisted room (refresh / reconnect).
+      // Auto-rejoin a persisted room (refresh / reconnect) — but ONLY if a real
+      // name was saved, so we never silently rejoin as "Guest".
       const saved = localStorage.getItem("pawse_room");
-      if (saved && !this.room) this._send("join", { room: saved, name: this.myName, uid: this.uid });
+      const savedName = localStorage.getItem("pawse_name");
+      if (saved && savedName && savedName.trim() && !this.room) {
+        this._send("join", { room: saved, name: savedName, uid: this.uid });
+      }
       this._emit();
     };
     this.ws.onclose = () => {

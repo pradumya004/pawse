@@ -33,6 +33,7 @@ export default function App() {
   const [chatText, setChatText] = useState("");
   const [lobbyMode, setLobbyMode] = useState("choose"); // "choose" = pick create/join, "join" = code entry
   const [inviteRoom, setInviteRoom] = useState(null); // room code pulled from a ?room= invite link
+  const [needName, setNeedName] = useState(false); // true when user tries to create/join without a name
 
   const clientRef = useRef(null);
   const videoRef = useRef(null);
@@ -69,6 +70,7 @@ export default function App() {
   useEffect(() => {
     const r = new URLSearchParams(window.location.search).get("room");
     if (r) {
+      localStorage.removeItem("pawse_room"); // an invite link takes priority over any leftover room
       const CODE = r.toUpperCase();
       setCode(CODE);
       setLobbyMode("join");
@@ -101,10 +103,12 @@ export default function App() {
 
   const saveName = () => localStorage.setItem("pawse_name", name.trim());
   const onCreate = () => {
+    if (!name.trim()) { setNeedName(true); return; }
     saveName();
     clientRef.current.create(name.trim());
   };
   const onJoin = () => {
+    if (!name.trim()) { setNeedName(true); return; }
     if (!code.trim()) return;
     saveName();
     clientRef.current.join(code.trim().toUpperCase(), name.trim());
@@ -182,8 +186,14 @@ export default function App() {
                   placeholder="your name, cutie"
                   maxLength={12}
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    setNeedName(false);
+                  }}
                 />
+                {needName && (
+                  <div className="tinyhint nameerr">🐱 enter your name first!</div>
+                )}
               </div>
 
               {lobbyMode === "choose" ? (
