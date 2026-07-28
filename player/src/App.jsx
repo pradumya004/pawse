@@ -20,6 +20,7 @@ export default function App() {
     partnerName: null,
     fileName: null,
     hint: "",
+    error: null,
     progress: 0,
     transfer: "idle",
     cameraOn: false,
@@ -102,17 +103,21 @@ export default function App() {
   const online = ["connected", "hosting", "in room", "watching"].includes(
     s.status,
   );
+  const ready = s.status === "connected"; // socket open & idle in the lobby
+  const reconnecting = s.status === "reconnecting"; // dropped mid-session, retrying
   const transferring = s.transfer === "sending" || s.transfer === "receiving";
   const pct = Math.round((s.progress || 0) * 100);
 
   const saveName = () => localStorage.setItem("pawse_name", name.trim());
   const onCreate = () => {
     if (!name.trim()) { setNeedName(true); return; }
+    if (!ready) return; // socket not open yet — the loading note explains why
     saveName();
     clientRef.current.create(name.trim());
   };
   const onJoin = () => {
     if (!name.trim()) { setNeedName(true); return; }
+    if (!ready) return;
     if (!code.trim()) return;
     saveName();
     clientRef.current.join(code.trim().toUpperCase(), name.trim());
@@ -200,9 +205,14 @@ export default function App() {
                 )}
               </div>
 
+              {s.error && <div className="tinyhint err">{s.error}</div>}
+              {!ready && (
+                <div className="tinyhint">🔌 waking up the server… (first connect ~30s)</div>
+              )}
+
               {lobbyMode === "choose" ? (
                 <div className="chooser">
-                  <button className="btn primary big" onClick={onCreate}>
+                  <button className="btn primary big" onClick={onCreate} disabled={!ready}>
                     🎬 CREATE A ROOM
                   </button>
                   <div className="tinyhint">(you have the movie file)</div>
@@ -229,7 +239,7 @@ export default function App() {
                     value={code}
                     onChange={(e) => setCode(e.target.value.toUpperCase())}
                   />
-                  <button className="btn primary" onClick={onJoin}>
+                  <button className="btn primary" onClick={onJoin} disabled={!ready}>
                     JOIN ROOM
                   </button>
                   <button
@@ -254,6 +264,9 @@ export default function App() {
         ) : (
           // ===================== ROOM =====================
           <div className="roomWrap">
+            {reconnecting && (
+              <div className="reconnbar">🔄 connection dropped — reconnecting, hang tight 🐾</div>
+            )}
             <div className="roombar">
               <div className="roomcode">
                 <span className="label">ROOM</span>{" "}

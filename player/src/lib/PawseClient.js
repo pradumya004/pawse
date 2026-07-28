@@ -51,6 +51,7 @@ export class PawseClient {
     this.suppress = false;
     this.video = null;
     this.hint = "";
+    this.error = null; // P0-7: user-facing error (bad code, server full)
     this.progress = 0;
     this.transfer = "idle"; // idle | sending | receiving | ready
     this._lastPct = -1;
@@ -114,6 +115,7 @@ export class PawseClient {
       partnerName: this.partnerName,
       fileName: this.fileName,
       hint: this.hint,
+      error: this.error,
       mediaError: this.mediaError,
       audioMissing: this.audioMissing,
       formatWarn: this.formatWarn,
@@ -258,12 +260,16 @@ export class PawseClient {
   // ---- room actions ----
 
   create(name) {
+    this.error = null; // clear any previous error on a fresh attempt
+    this._emit();
     const n = (name || "").trim();
     this.myName = n || "Guest";
     if (n) localStorage.setItem("pawse_name", n); // only persist a REAL name — never "Guest"
     this._send("create", { name: this.myName, uid: this.uid });
   }
   join(code, name) {
+    this.error = null; // clear any previous error on a fresh attempt
+    this._emit();
     const n = (name || "").trim();
     this.myName = n || "Guest";
     if (n) localStorage.setItem("pawse_name", n); // only persist a REAL name — never "Guest"
@@ -312,6 +318,7 @@ export class PawseClient {
         this.clientId = msg.id;
         break;
       case "room":
+        this.error = null; // success wipes any prior error
         this.room = msg.room;
         this.role = msg.role;
         if (typeof msg.partnerHere === "boolean") this.partnerHere = msg.partnerHere;
@@ -363,17 +370,19 @@ export class PawseClient {
           this._applyRemoteControl(msg.action, msg.mediaTime);
         }
         break;
-      case "error":
-        if (msg.reason === "no_such_room") {
-          localStorage.removeItem("pawse_room");
-          this.room = null;
-          this.role = null;
-          this.status = "connected";
-        } else {
-          this.status = `err: ${msg.reason}`;
-        }
+      case "error": {
+        const messages = {
+          no_such_room: "😿 no room with that code — double-check it with your partner?",
+          server_full: "🙀 our server is full right now — try again in a moment",
+        };
+        this.error = messages[msg.reason] || "😿 something went wrong — try again";
+        if (msg.reason === "no_such_room") localStorage.removeItem("pawse_room");
+        this.room = null;
+        this.role = null;
+        if (this.status !== "reconnecting") this.status = "connected";
         this._emit();
         break;
+      }
     }
   }
 

@@ -281,6 +281,24 @@ body {
   margin-top: 2px;
 }
 
+/* P0-7: error / loading / reconnect states */
+.tinyhint.err { color: var(--off); font-size: var(--fs-2xs); margin-top: 2px; }
+
+.btn:disabled { opacity: 0.45; cursor: not-allowed; filter: grayscale(0.3); }
+.btn:disabled:hover { filter: grayscale(0.3); }
+.btn:disabled:active { transform: none; box-shadow: var(--shadow-lg); }
+
+.reconnbar {
+  text-align: center;
+  font-size: var(--fs-2xs);
+  letter-spacing: 0.5px;
+  color: var(--ink);
+  background: var(--ginger);
+  border: var(--border);
+  box-shadow: var(--shadow-sm);
+  padding: 8px;
+}
+
 .divider {
   display: flex;
   align-items: center;
