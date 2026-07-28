@@ -32,6 +32,7 @@ export default function App() {
   const [copied, setCopied] = useState(false);
   const [chatText, setChatText] = useState("");
   const [lobbyMode, setLobbyMode] = useState("choose"); // "choose" = pick create/join, "join" = code entry
+  const [inviteRoom, setInviteRoom] = useState(null); // room code pulled from a ?room= invite link
 
   const clientRef = useRef(null);
   const videoRef = useRef(null);
@@ -63,6 +64,26 @@ export default function App() {
     if (s.room && videoRef.current)
       clientRef.current?.attachVideo(videoRef.current);
   }, [s.room]);
+
+  // If opened via an invite link (?room=CODE) → prefill the code + show the join panel.
+  useEffect(() => {
+    const r = new URLSearchParams(window.location.search).get("room");
+    if (r) {
+      const CODE = r.toUpperCase();
+      setCode(CODE);
+      setLobbyMode("join");
+      setInviteRoom(CODE);
+    }
+  }, []);
+
+  // Auto-join the invited room once we're connected — but only if a name is already
+  // saved. If not, we leave the join panel prefilled so they type a name first.
+  useEffect(() => {
+    if (inviteRoom && s.status === "connected" && !s.room && name.trim()) {
+      clientRef.current.join(inviteRoom, name.trim());
+      setInviteRoom(null);
+    }
+  }, [s.status, inviteRoom]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-scroll the chat to the newest message.
   useEffect(() => {
@@ -101,9 +122,10 @@ export default function App() {
     if (f) clientRef.current.addSubtitles(f);
   };
   const onCopy = () => {
-    navigator.clipboard.writeText(s.room);
+    const link = `${window.location.origin}/?room=${s.room}`;
+    navigator.clipboard.writeText(link);
     setCopied(true);
-    setTimeout(() => setCopied(false), 1200);
+    setTimeout(() => setCopied(false), 1400);
   };
   const toggleCam = () =>
     s.cameraOn
@@ -224,7 +246,7 @@ export default function App() {
                 <span className="code">{s.room}</span>
               </div>
               <button className="btn small" onClick={onCopy}>
-                {copied ? "✓ COPIED" : "📋 COPY CODE"}
+                {copied ? "✓ LINK COPIED" : "📋 COPY LINK"}
               </button>
               <div className={"partner" + (s.partnerHere ? " active" : "")}>
                 {s.partnerHere
