@@ -17,7 +17,7 @@
 ---
 
 ## Execution plan → see [docs/PRODUCT-PLAN.md](docs/PRODUCT-PLAN.md)
-The prioritized P0/P1/P2 queue + TURN & no-DRM decisions live there (single source). **Current:** Path B TURN · P0-4 ✅ done · next P0-5 (share link).
+The prioritized P0/P1/P2 queue + TURN & no-DRM decisions live there (single source). **Current:** Path B TURN · P0-3/P0-4/P0-5 ✅ done · next P0-6 (design tokens).
 
 ## Timeline
 
@@ -36,6 +36,9 @@ The prioritized P0/P1/P2 queue + TURN & no-DRM decisions live there (single sour
 ## Current position
 
 - **v1 LIVE:** app https://pawsetv.vercel.app · relay wss://pawse-relay.onrender.com · both tracks on cloud.
+- **▶ P0 QUEUE:** P0-3 ✅, P0-4 ✅, P0-5 ✅ shipped. **Next: P0-6 (design tokens) → P0-7 (error/empty/loading states).** See `docs/PRODUCT-PLAN.md`.
+- **P0-5 (share link + name-required) ✅:** `?room=CODE` invite lands on JOIN panel; a name is now REQUIRED to create/join (🐱 nudge). Fixed a bug where old builds saved `"Guest"` as the name → invite auto-joined as Guest; now never persist `"Guest"` and treat a stored `"Guest"` as no-name.
+- **P0-3 (codec safety net) ✅:** runtime detection in `PawseClient.attachVideo` — `error`/zero video dims → red banner over the player ("convert to MP4 H.264+AAC"); `webkitAudioDecodedByteCount`==0 after playback → dynamic `audioMissing` "🔇 no sound" hint (replaced the old always-on scare hint). Flags reset per file via `_resetMediaChecks()`.
 - **Chrome Web Store listing PREPPED:** pixel-cat icons wired into manifest; extension packaged to `build/pawse-extension-v0.1.0.zip` (valid, forward slashes); privacy policy → https://pawsetv.vercel.app/privacy.html; listing copy in `docs/STORE-LISTING.md`. **▶ user: pay $5 dev fee → upload zip → paste copy → screenshots → submit.**
 - **UI overhaul (done):** responsive full-width two-column layout (lobby: card+meowfeed; room: video+sidebar), paw-print bg, cuter typography/taglines. MeowFeed now pulls from 8 cat subreddits (Catmemes/funnycats/sillycats/CatReacts/WhatsWrongWithYourCat/WhyCatHowCat/cats/catpics) and supports images + GIFs + videos.
 - **✅ REAL-SESSION BUGS FIXED (from gf test):**

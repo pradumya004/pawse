@@ -22,7 +22,7 @@
 |---|------|------|--------|
 | P0-1 | Prove call + movie connect across two real networks | Dev/Customer | ⏸ pending (Path B) |
 | P0-2 | Production TURN (Cloudflare / self-host) | Infra | ⏸ parked (needs card) |
-| P0-3 | **Codec safety net** — detect an unplayable file (no decodable audio/video) → clear message, never a silent black screen | Customer/Dev | ⬜ (only a static warning hint today) |
+| P0-3 | **Codec safety net** — detect an unplayable file (no decodable audio/video) → clear message, never a silent black screen | Customer/Dev | ✅ done — runtime detect: `error`/zero-dims → banner; `webkitAudioDecodedByteCount`==0 → dynamic "no sound" hint (replaced the old always-on one) |
 | P0-4 | **Clear Create/Join chooser** — two buttons, container swaps | Design/UX | ✅ done |
 | P0-5 | **Shareable room LINK** — click → lands straight in the room (`?room=CODE`) | UX/Sales | ✅ done |
 | P0-6 | **Design system / single source of truth** — one tokens file both clients import | Dev/Design | ⬜ |
@@ -69,4 +69,4 @@
 ---
 
 ## Current focus
-Path B TURN. **P0-4 + P0-5 shipped.** Next: **P0-3 (codec safety)** → **P0-6 (design system)** → **P0-7 (states)**, then the P1 room redesign + vibe pass.
+Path B TURN. **P0-3 + P0-4 + P0-5 shipped.** Next: **P0-6 (design system / tokens)** → **P0-7 (error/empty/loading states)**, then the P1 room redesign + vibe pass (vibe pass sits on top of P0-6 tokens).
