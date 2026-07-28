@@ -135,11 +135,11 @@ body {
 /* ---------- LOBBY ---------- */
 .lobbyGrid {
   width: 100%;
-  max-width: 1080px;
+  max-width: 1160px;
   margin: auto; /* center the lobby (stage no longer centers for us) */
   display: grid;
-  grid-template-columns: 420px 1fr;
-  gap: 44px;
+  grid-template-columns: 460px 1fr;
+  gap: 40px;
   align-items: center;
 }
 
@@ -353,25 +353,25 @@ body {
   box-shadow: var(--shadow-sm);
 }
 
-/* ambient pixel stickers drifting around the lobby (tasteful, low-key) */
+/* big pixel-cat stickers filling the empty side margins (fixed to viewport) */
 .lobbyGrid { position: relative; }
 .card, .lobbyArt { position: relative; z-index: 1; } /* content above the stickers */
-.stickers { position: absolute; inset: -14px; pointer-events: none; z-index: 0; }
-.stickers .sticker {
-  position: absolute;
-  font-size: 30px;
-  opacity: 0.5;
-  animation: bob 4s ease-in-out infinite;
-}
-.sticker.s1 { top: 1%;  left: -1%; animation-delay: 0s; }
-.sticker.s2 { top: 5%;  right: 1%; animation-delay: 0.6s; }
-.sticker.s3 { bottom: 3%; left: 2%; animation-delay: 1.2s; }
-.sticker.s4 { bottom: 1%; right: 0%; animation-delay: 0.3s; }
-.sticker.s5 { top: 45%; right: -2%; font-size: 24px; animation-delay: 0.9s; }
+.stickers { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+.catsticker { image-rendering: pixelated; display: block; }
+.st { position: absolute; width: 78px; opacity: 0.92; animation: bob 4s ease-in-out infinite; }
+.st-l  { left: 3%;  top: 40%; }
+.st-r  { right: 3%; top: 34%; width: 84px; animation-delay: 0.7s; }
+.st-tl { left: 6%;  top: 16%; width: 56px; animation-delay: 1.2s; }
+.st-br { right: 6%; bottom: 12%; width: 62px; animation-delay: 0.4s; }
 @keyframes bob {
   0%, 100% { transform: translateY(0) rotate(-4deg); }
-  50% { transform: translateY(-8px) rotate(4deg); }
+  50% { transform: translateY(-9px) rotate(4deg); }
 }
+
+/* the card's hero cat + centered hero text */
+.cardHero { display: flex; justify-content: center; margin-bottom: 2px; }
+.heroCat { width: 66px; animation: wiggle 2.6s steps(3) infinite; }
+.cardTitle, .cardSub { text-align: center; }
 
 /* 😻 partner-joined celebration */
 .burst { position: fixed; inset: 0; pointer-events: none; z-index: 90; }
@@ -387,9 +387,14 @@ body {
   100% { opacity: 0; transform: translateY(-180px) scale(1.25); }
 }
 
+/* the big margin stickers need room — hide them once the layout tightens */
+@media (max-width: 1100px) {
+  .stickers { display: none; }
+}
+
 /* accessibility: honor reduced-motion */
 @media (prefers-reduced-motion: reduce) {
-  .card, .chooser, .joinpanel, .sticker, .burst span, .paws { animation: none; }
+  .card, .chooser, .joinpanel, .st, .heroCat, .burst span, .paws { animation: none; }
 }
 
 .divider {
@@ -557,6 +562,8 @@ body {
 
 .meowframe {
   width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
   aspect-ratio: 4 / 3;
   background: var(--white);
   border: var(--border);
@@ -739,7 +746,6 @@ body {
 @media (max-width: 900px) {
   .stage { align-items: flex-start; }
   .lobbyGrid { grid-template-columns: 1fr; max-width: 460px; gap: 24px; }
-  .stickers { display: none; } /* avoid clutter on small screens */
   .lobbyArt { order: -1; } /* show a cat on top on mobile */
   .roomWrap { height: auto; }
   .roomGrid { grid-template-columns: 1fr; }

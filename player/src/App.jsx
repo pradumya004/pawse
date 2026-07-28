@@ -9,6 +9,7 @@
 import { useEffect, useRef, useState } from "react";
 import { PawseClient } from "./lib/PawseClient.js";
 import Cat from "./Cat.jsx";
+import CatSticker from "./CatSticker.jsx";
 import MeowFeed from "./MeowFeed.jsx";
 
 export default function App() {
@@ -196,16 +197,18 @@ export default function App() {
         {!inRoom ? (
           // ===================== LOBBY =====================
           <div className="lobbyGrid">
+            {/* cute pixel-cat stickers filling the empty margins */}
             <div className="stickers" aria-hidden="true">
-              <span className="sticker s1">🐾</span>
-              <span className="sticker s2">💕</span>
-              <span className="sticker s3">🍿</span>
-              <span className="sticker s4">🎬</span>
-              <span className="sticker s5">🐱</span>
+              <CatSticker variant="love" className="catsticker st st-l" />
+              <CatSticker variant="happy" className="catsticker st st-r" />
+              <CatSticker variant="sleep" className="catsticker st st-tl" />
+              <CatSticker variant="wink" className="catsticker st st-br" />
             </div>
 
             <section className="card">
-              <div className="paws">🐾</div>
+              <div className="cardHero">
+                <CatSticker variant="love" className="catsticker heroCat" />
+              </div>
               <h2 className="cardTitle">
                 watch your movies,
                 <br />
