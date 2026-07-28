@@ -45,7 +45,8 @@ pawse/
 
 | Doc | What's inside |
 |---|---|
-| [ROADMAP.md](ROADMAP.md) | Phases 0–8, tasks, status, build-order graph |
+| [ROADMAP.md](ROADMAP.md) | Phases 0–8, tasks, status, build-order graph (the map) |
+| [docs/PRODUCT-PLAN.md](docs/PRODUCT-PLAN.md) | P0/P1/P2 execution priority queue + locked decisions |
 | [FILE-TRACKER.md](FILE-TRACKER.md) | Live map of every file + current position (the resume anchor) |
 | [docs/WORKFLOW-TREE.md](docs/WORKFLOW-TREE.md) | The horizontal feature tree — every capability, branching left→right |
 | [docs/FLOW-DIAGRAM.md](docs/FLOW-DIAGRAM.md) | Sequence/flow diagrams: join flow, sync loop, drift correction, P2P |

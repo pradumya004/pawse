@@ -16,20 +16,8 @@
 
 ---
 
-## P0 → P2 plan progress (see the product plan we agreed on)
-
-**TURN decision:** Path B for now — ExpressTURN + Open Relay (no card). Cloudflare/self-host later (both need a card).
-
-**P0 (must-work):**
-- P0-1 connection test — ⏸ pending (Path B; needs real 2-network test)
-- P0-2 production TURN (Cloudflare) — ⏸ parked (needs card)
-- P0-3 codec safety net (detect unplayable file → clear error, not black screen) — ⬜ TODO (only a static warning hint exists)
-- P0-4 clear Create/Join chooser (container swaps) — ✅ done
-- P0-5 shareable room LINK (click → opens room) — ⬜ next
-- P0-6 design system / single source of truth — ⬜
-- P0-7 error/empty/loading states — ⬜
-
-(P1/P2 items tracked in the plan: room UI 3-toggle redesign, meme-feed repeat fix, cuter theme, mobile, onboarding, reconnect/pre-load, extension parity, ToS, anti-freeload, relay hardening; then transcode/accounts/payments/landing/scaling/etc.)
+## Execution plan → see [docs/PRODUCT-PLAN.md](docs/PRODUCT-PLAN.md)
+The prioritized P0/P1/P2 queue + TURN & no-DRM decisions live there (single source). **Current:** Path B TURN · P0-4 ✅ done · next P0-5 (share link).
 
 ## Timeline
 
