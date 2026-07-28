@@ -34,9 +34,9 @@
 |---|------|------|--------|
 | P1-1 | Room UI redesign: compact header, collapsible room code, **3 toggles (📷/🎤/💬)**, chat on→cams 2-col + panel / off→cams stacked bigger, video-as-hero (trim padding) | Design | ✅ done — independent camera/mic toggles (true device release), 💬 hides chat + stacks cams bigger, code masked behind 👁 reveal, trimmed gaps |
 | P1-2 | **The "vibe" pass** (make it genuinely look good, not just functional): | Design | ⬜ |
-| P1-2a | · **Homepage/lobby glow-up** — it should feel like a cute product, not a form. Hero, warmth, personality | Design | ⬜ |
-| P1-2b | · **Sticker set** — pixel cats, paws, hearts, popcorn, film reel placed tastefully (not clutter) | Design | ⬜ |
-| P1-2c | · **Micro-animations & effects** — button/hover feedback, smooth view transitions, floating paws/hearts, a little confetti/😻 burst on "partner joined" & reactions | Design | ⬜ |
+| P1-2a | · **Homepage/lobby glow-up** | Design | ✅ done — feature badges, ambient stickers, card entrance; more warmth lands with dark mode (P1-2e) |
+| P1-2b | · **Sticker set** — pixel cats, paws, hearts, popcorn, film reel placed tastefully (not clutter) | Design | ✅ done — 5 bobbing lobby stickers, low-opacity, hidden on mobile |
+| P1-2c | · **Micro-animations & effects** | Design | ✅ done — card slide-in, chooser/join fade, button hover-lift, 😻 partner-joined burst; honors reduced-motion. (reactions = P1-4) |
 | P1-2d | · **Typography system** — consistent pixel type *scale* (sizes/weights/spacing as tokens), readable everywhere, Press Start 2P for accents + a readable pixel body font | Design | ⬜ |
 | P1-2e | · **Overall cozy/cool vibe** — cohesive Cream & Ginger, subtle textures (scanlines/paper), dark "movie-night" mode option | Design | ⬜ |
 | P1-2f | · **Favicon + tab identity** | Design/Sales | ✅ done — `public/favicon.svg` (pixel-cat on cream), title, description, theme-color, OG/Twitter tags. TODO later: dedicated 1200×630 PNG og:image |
@@ -69,4 +69,4 @@
 ---
 
 ## Current focus
-Path B TURN. **ALL P0 SHIPPED. P1-1 (room redesign) SHIPPED.** Next: **P1-2 the vibe pass (P1-2a–f)** — homepage glow-up, stickers, micro-animations, typography scale, cozy/dark mode, favicon. Sits on the P0-6 tokens. Then P1-3 meme-feed → P1-4 reactions → onward.
+Path B TURN. **ALL P0 SHIPPED. P1-1 ✅. Vibe pass: P1-2f (favicon) ✅, P1-2a/b/c (lobby glow-up/stickers/animations) ✅.** Next in vibe pass: **P1-2e — dark "movie-night" mode + cohesion** (token swap, easy on P0-6), and P1-2d typography polish. Then P1-3 meme-feed → P1-4 reactions → onward.
