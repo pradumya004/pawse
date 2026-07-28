@@ -26,7 +26,7 @@
 | P0-4 | **Clear Create/Join chooser** — two buttons, container swaps | Design/UX | ✅ done |
 | P0-5 | **Shareable room LINK** — click → lands straight in the room (`?room=CODE`) | UX/Sales | ✅ done |
 | P0-6 | **Design system / single source of truth** — one tokens file both clients import | Dev/Design | ✅ done — `player/src/tokens.css` (color/type/border/shadow/spacing/z). styles.css fully swept to `var(--…)`, 0 raw hex. Extension imports same file in P1-8. |
-| P0-7 | **Error / empty / loading states** everywhere | UX | ⬜ |
+| P0-7 | **Error / empty / loading states** everywhere | UX | ✅ done — server errors surface as friendly lobby hints (bad code / server full); CREATE/JOIN gated + "waking up the server…" note during cold-start; amber reconnect banner in-room |
 
 ## P1 — "polished, delightful product you'd show off"
 
@@ -69,4 +69,4 @@
 ---
 
 ## Current focus
-Path B TURN. **P0-3 + P0-4 + P0-5 + P0-6 shipped.** Next: **P0-7 (error/empty/loading states)**, then P1 room redesign + vibe pass (now unblocked — re-theming = edit `tokens.css`).
+Path B TURN. **ALL P0 SHIPPED (P0-3→P0-7).** Next: **P1 — room redesign (P1-1) + the vibe pass (P1-2)**, now fully unblocked (re-theming = edit `tokens.css`). Recommended P1 order: P1-1 room redesign → P1-2a–f vibe pass → P1-3 meme-feed → onward.
