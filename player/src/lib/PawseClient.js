@@ -54,8 +54,9 @@ export class PawseClient {
     this.progress = 0;
     this.transfer = "idle"; // idle | sending | receiving | ready
     this._lastPct = -1;
-    this.mediaError = null; // P0-3: user-facing message when the file can't be decoded
-    this.audioMissing = false; // P0-3: video plays but audio codec (AC3/DTS) is undecodable
+    this.mediaError = null; // P0-3: hard failure — file can't be decoded at all
+    this.audioMissing = false; // P0-3: CONFIRMED silent (byte-count == 0 after playback)
+    this.formatWarn = null; // P0-3: soft heuristic caution from the file name (HEVC/Dolby/MKV)
     this._audioChecked = false;
 
     this._chunks = [];
@@ -115,6 +116,7 @@ export class PawseClient {
       hint: this.hint,
       mediaError: this.mediaError,
       audioMissing: this.audioMissing,
+      formatWarn: this.formatWarn,
       progress: this.progress,
       transfer: this.transfer,
       cameraOn: this.cameraOn,
@@ -142,8 +144,29 @@ export class PawseClient {
   _resetMediaChecks() {
     this.mediaError = null;
     this.audioMissing = false;
+    this.formatWarn = null;
     this._audioChecked = false;
     clearTimeout(this._audioTimer);
+  }
+
+  // Instant, non-invasive heuristic: release file names encode their codecs
+  // (e.g. "...2160p.H.265-DDP5.1.mkv"). Warn BEFORE playback, since the reliable
+  // runtime audio API is often unavailable. The runtime check below can clear this
+  // if it turns out sound actually plays.
+  _heuristicCheck(name) {
+    const n = (name || "").toLowerCase();
+    const bits = [];
+    if (/(h\.?\s*265|hevc|x265)/.test(n)) bits.push("HEVC/H.265 video");
+    if (/\bav1\b/.test(n)) bits.push("AV1 video");
+    if (/(e-?ac-?3|\bac-?3\b|\bddp?\b|dd5|dts|truehd|atmos|dolby)/.test(n))
+      bits.push("Dolby/DTS audio");
+    if (!bits.length && /\.(mkv|avi|ts|m2ts|wmv|flv|vob)$/.test(n))
+      bits.push("an MKV/AVI-type container");
+    this.formatWarn = bits.length
+      ? "this file looks like it has " +
+        bits.join(" + ") +
+        " — browsers often play these with no sound (or not at all)."
+      : null;
   }
 
   // <video> 'error' → almost always an undecodable container/codec (MKV, HEVC, etc.).
@@ -175,11 +198,16 @@ export class PawseClient {
       const v = this.video;
       if (!v || v.paused || v.currentTime < 0.3) return; // needs real playback to judge
       const decoded = v.webkitAudioDecodedByteCount;
-      if (typeof decoded !== "number") return; // API not supported → skip silently
+      if (typeof decoded !== "number") return; // API missing → leave the heuristic as-is
       this._audioChecked = true;
-      this.audioMissing = decoded === 0;
+      if (decoded === 0) {
+        this.audioMissing = true; // CONFIRMED silent
+      } else {
+        this.audioMissing = false;
+        this.formatWarn = null; // sound is actually flowing → drop the heuristic caution
+      }
       this._emit();
-    }, 1500);
+    }, 2000);
   }
 
   // ---- connection + resilience ----
@@ -270,6 +298,7 @@ export class PawseClient {
     this.video.srcObject = null;
     this.video.src = URL.createObjectURL(file); // host plays native file locally
     this._resetMediaChecks();
+    this._heuristicCheck(file.name);
     this._teardown();
     this._maybeStartTransfer();
     this._emit();
@@ -475,6 +504,7 @@ export class PawseClient {
     this.video.srcObject = null;
     this.video.src = URL.createObjectURL(blob); // partner plays the NATIVE file
     this._resetMediaChecks();
+    this._heuristicCheck(this._meta?.name);
     this.fileName = this._meta?.name || "movie";
     this.transfer = "ready";
     this.progress = 1;

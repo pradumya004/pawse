@@ -303,14 +303,15 @@ export default function App() {
                     <span className="filename">🎞️ {s.fileName}</span>
                   )}
                 </div>
-                {s.audioMissing && (
+                {(s.audioMissing || s.formatWarn) && (
                   <div className="tinyhint fmt">
-                    🔇 no sound — this file's audio (likely AC3/DTS/Dolby) can't be
-                    decoded in the browser.
+                    {s.audioMissing
+                      ? "🔇 no sound — this file's audio (likely AC3/DTS/Dolby) can't be decoded in the browser."
+                      : "⚠️ " + s.formatWarn}
                     {isHost && (
                       <>
-                        {" "}re-encode to AAC:{" "}
-                        <code>ffmpeg -i in.mkv -c:v copy -c:a aac out.mp4</code>
+                        {" "}safest fix — re-encode to MP4 + AAC:{" "}
+                        <code>ffmpeg -i in.mkv -c:v libx264 -c:a aac out.mp4</code>
                       </>
                     )}
                   </div>
