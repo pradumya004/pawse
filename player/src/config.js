@@ -18,12 +18,14 @@ export const PAWSE_CONFIG = {
   // WebRTC tries direct (STUN) first and only uses TURN as a fallback, so TURN
   // quota is spent only when a direct path can't be found. The multiple ports
   // (80, 443, TLS/tcp) maximize the chance of punching through locked networks.
-  // Metered.ca personal TURN (free 20GB/mo). TURN creds are client-side by design.
+  // TURN creds are client-side by design (the browser needs them).
   ICE_SERVERS: [
     { urls: "stun:stun.l.google.com:19302" },
-    { urls: "stun:stun.relay.metered.ca:80" },
-    { urls: "turn:global.relay.metered.ca:80", username: "73adf437e22711a4e0f09114", credential: "3B3L3xh8nQWfuTlZ" },
-    { urls: "turn:global.relay.metered.ca:80?transport=tcp", username: "73adf437e22711a4e0f09114", credential: "3B3L3xh8nQWfuTlZ" },
+    // Primary: ExpressTURN (free, ~1000GB/mo, no card) — port 3478 UDP + TCP.
+    { urls: "turn:free.expressturn.com:3478", username: "000000002100599088", credential: "H/5J1xXDaq7PL4IU5gge73njdms=" },
+    { urls: "turn:free.expressturn.com:3478?transport=tcp", username: "000000002100599088", credential: "H/5J1xXDaq7PL4IU5gge73njdms=" },
+    // Fallback: metered 443/TLS — punches through networks that block 3478
+    // (small quota; only used when ExpressTURN's port is unreachable).
     { urls: "turn:global.relay.metered.ca:443", username: "73adf437e22711a4e0f09114", credential: "3B3L3xh8nQWfuTlZ" },
     { urls: "turns:global.relay.metered.ca:443?transport=tcp", username: "73adf437e22711a4e0f09114", credential: "3B3L3xh8nQWfuTlZ" },
   ],
