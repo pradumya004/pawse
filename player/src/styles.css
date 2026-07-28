@@ -3,25 +3,15 @@
 
   Responsive two-column layout: lobby (card | meow feed) and room (video | sidebar)
   fill the screen and fit without page scroll on desktop; stack on mobile.
+
+  Design values (colors, type, borders, shadows) come from tokens.css — this file
+  only references var(--…) tokens, never raw hex/px, so re-theming happens in one place.
 */
 
 @font-face {
   font-family: "PressStart";
   src: url("/PressStart2P.ttf") format("truetype");
   font-display: swap;
-}
-
-:root {
-  --bg: #f4ecd8;
-  --panel: #e7dabc;
-  --ink: #2a2438;
-  --ink-soft: #7a6f5d;
-  --ginger: #ef7d1a;
-  --ginger-deep: #d9660a;
-  --pink: #e85d86;
-  --live: #3a9d4a;
-  --off: #d9463f;
-  --pixel-font: "PressStart", "Courier New", monospace;
 }
 
 * {
@@ -51,7 +41,7 @@ body {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: 100;
+  z-index: var(--z-scanlines);
   background: repeating-linear-gradient(
     to bottom,
     rgba(42, 36, 56, 0.035) 0px,
@@ -67,7 +57,7 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 12px 22px;
-  border-bottom: 3px solid var(--ink);
+  border-bottom: var(--border);
   background: var(--panel);
 }
 
@@ -100,14 +90,14 @@ body {
 }
 
 .logo {
-  font-size: 20px;
+  font-size: var(--fs-xl);
   letter-spacing: 1px;
   color: var(--ginger);
-  text-shadow: 2px 2px 0 var(--ink);
+  text-shadow: var(--shadow-sm);
 }
 
 .tagline {
-  font-size: 7px;
+  font-size: var(--fs-3xs);
   letter-spacing: 0.5px;
   color: var(--ink-soft);
 }
@@ -116,7 +106,7 @@ body {
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 8px;
+  font-size: var(--fs-2xs);
   letter-spacing: 1px;
   color: var(--ink-soft);
 }
@@ -126,7 +116,7 @@ body {
   height: 9px;
   flex-shrink: 0;
   background: var(--off);
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: var(--shadow-sm);
 }
 
 .dot.on { background: var(--live); }
@@ -154,9 +144,9 @@ body {
 }
 
 .card {
-  background: #fff;
-  border: 3px solid var(--ink);
-  box-shadow: 7px 7px 0 rgba(42, 36, 56, 0.35);
+  background: var(--white);
+  border: var(--border);
+  box-shadow: var(--shadow-2xl);
   padding: 26px 22px;
   display: flex;
   flex-direction: column;
@@ -165,7 +155,7 @@ body {
 
 .paws {
   text-align: center;
-  font-size: 28px;
+  font-size: var(--fs-2xl);
   animation: wiggle 2s steps(3) infinite;
 }
 
@@ -175,14 +165,14 @@ body {
 }
 
 .cardTitle {
-  font-size: 15px;
+  font-size: var(--fs-lg);
   line-height: 1.7;
   color: var(--ginger);
   text-shadow: 2px 2px 0 rgba(42, 36, 56, 0.15);
 }
 
 .cardSub {
-  font-size: 8px;
+  font-size: var(--fs-2xs);
   line-height: 2;
   letter-spacing: 0.5px;
   color: var(--ink-soft);
@@ -197,7 +187,7 @@ body {
 }
 
 .bigtag {
-  font-size: 13px;
+  font-size: var(--fs-md);
   line-height: 1.9;
   text-align: center;
   color: var(--ink);
@@ -210,11 +200,11 @@ body {
   gap: 6px;
   padding: 10px;
   background: var(--panel);
-  border: 2px solid var(--ink);
+  border: var(--border-2);
 }
 
 .label {
-  font-size: 8px;
+  font-size: var(--fs-2xs);
   letter-spacing: 1px;
   color: var(--ink-soft);
 }
@@ -222,38 +212,38 @@ body {
 .input {
   width: 100%;
   font-family: var(--pixel-font);
-  font-size: 11px;
+  font-size: var(--fs-sm);
   letter-spacing: 1px;
   color: var(--ink);
-  background: #fff;
-  border: 3px solid var(--ink);
+  background: var(--white);
+  border: var(--border);
   padding: 10px 9px;
 }
 
 .input:focus { outline: none; border-color: var(--ginger); }
-.input::placeholder { color: #b8ac92; }
+.input::placeholder { color: var(--panel-edge); }
 #room { text-align: center; text-transform: uppercase; letter-spacing: 3px; }
 
 /* ---------- buttons ---------- */
 .btn {
   font-family: var(--pixel-font);
-  font-size: 9px;
+  font-size: var(--fs-xs);
   line-height: 1.5;
   letter-spacing: 1px;
   padding: 12px;
   color: var(--bg);
   background: var(--ink);
-  border: 3px solid var(--ink);
-  box-shadow: 4px 4px 0 rgba(42, 36, 56, 0.4);
+  border: var(--border);
+  box-shadow: var(--shadow-lg);
   cursor: pointer;
 }
 
 .btn:hover { filter: brightness(1.08); }
 .btn:active { transform: translate(4px, 4px); box-shadow: 0 0 0; }
 .btn.primary { background: var(--ginger); color: var(--ink); }
-.btn.big { font-size: 11px; padding: 14px; }
-.btn.small { font-size: 8px; padding: 8px 10px; box-shadow: 3px 3px 0 rgba(42, 36, 56, 0.4); }
-.btn.leave { background: #fff; color: var(--pink); border-color: var(--pink); }
+.btn.big { font-size: var(--fs-sm); padding: 14px; }
+.btn.small { font-size: var(--fs-2xs); padding: 8px 10px; box-shadow: var(--shadow-md); }
+.btn.leave { background: var(--white); color: var(--pink); border-color: var(--pink); }
 
 /* lobby chooser (P0-4): two stacked action panels that swap on lobbyMode */
 .chooser,
@@ -269,7 +259,7 @@ body {
   color: var(--ink-soft);
   border-color: transparent;
   box-shadow: none;
-  font-size: 8px;
+  font-size: var(--fs-2xs);
   padding: 6px;
 }
 .btn.ghost:active {
@@ -278,7 +268,7 @@ body {
 
 .tinyhint {
   text-align: center;
-  font-size: 7px;
+  font-size: var(--fs-3xs);
   line-height: 1.6;
   color: var(--ink-soft);
   margin-top: -3px;
@@ -287,7 +277,7 @@ body {
 /* name-required nudge (P0-5 fix) */
 .tinyhint.nameerr {
   color: var(--pink);
-  font-size: 8px;
+  font-size: var(--fs-2xs);
   margin-top: 2px;
 }
 
@@ -295,7 +285,7 @@ body {
   display: flex;
   align-items: center;
   text-align: center;
-  font-size: 7px;
+  font-size: var(--fs-3xs);
   letter-spacing: 1px;
   color: var(--ink-soft);
 }
@@ -327,22 +317,22 @@ body {
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
-  background: #fff;
-  border: 3px solid var(--ink);
+  background: var(--white);
+  border: var(--border);
 }
 
 .roomcode { display: flex; align-items: center; gap: 8px; }
-.code { font-size: 16px; letter-spacing: 3px; color: var(--ginger); }
+.code { font-size: var(--fs-lg); letter-spacing: 3px; color: var(--ginger); }
 
 .partner {
   flex: 1;
   min-width: 150px;
   text-align: center;
-  font-size: 8px;
+  font-size: var(--fs-2xs);
   letter-spacing: 0.5px;
   color: var(--ink-soft);
   padding: 7px;
-  border: 2px dashed var(--ink-soft);
+  border: var(--border-dash);
 }
 
 .partner.active { color: var(--ink); border: 2px solid var(--pink); }
@@ -369,7 +359,7 @@ body {
   min-width: 0;
   min-height: 0; /* allow it to be bounded by the grid row (so chat scrolls) */
   overflow: hidden;
-  border: 3px solid var(--ink);
+  border: var(--border);
   background: var(--panel);
   padding: 14px;
   display: flex;
@@ -379,18 +369,18 @@ body {
 
 .roomtools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .tinyhint.fmt { text-align: left; margin: 0; line-height: 1.9; }
-.tinyhint.fmt code { background: var(--panel); padding: 1px 5px; border: 1px solid var(--ink-soft); font-size: 9px; }
+.tinyhint.fmt code { background: var(--panel); padding: 1px 5px; border: var(--border-thin); font-size: var(--fs-xs); }
 .filepick { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 .filebtn { display: inline-block; }
-.filename { font-size: 8px; color: var(--ink-soft); word-break: break-all; }
+.filename { font-size: var(--fs-2xs); color: var(--ink-soft); word-break: break-all; }
 
 .progress { display: flex; flex-direction: column; gap: 8px; }
-.progresslabel { font-size: 8px; letter-spacing: 0.5px; color: var(--ink); }
+.progresslabel { font-size: var(--fs-2xs); letter-spacing: 0.5px; color: var(--ink); }
 
 .progressbar {
   height: 16px;
-  background: #fff;
-  border: 3px solid var(--ink);
+  background: var(--white);
+  border: var(--border);
   overflow: hidden;
 }
 
@@ -409,9 +399,9 @@ body {
   position: relative;
   flex: 1;
   min-height: 0; /* fill all remaining height — big video */
-  background: #000;
-  border: 3px solid var(--ink);
-  box-shadow: 6px 6px 0 rgba(42, 36, 56, 0.35);
+  background: var(--black);
+  border: var(--border);
+  box-shadow: var(--shadow-xl);
 }
 
 .video {
@@ -420,7 +410,7 @@ body {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  background: #000;
+  background: var(--black);
 }
 
 .videohint {
@@ -430,25 +420,25 @@ body {
   align-items: center;
   justify-content: center;
   pointer-events: none;
-  font-size: 10px;
+  font-size: var(--fs-xs);
   letter-spacing: 1px;
-  color: #f4ecd8;
+  color: var(--bg);
   text-align: center;
   padding: 20px;
-  text-shadow: 2px 2px 0 #000;
+  text-shadow: 2px 2px 0 var(--black);
 }
 /* P0-3: hard codec error — a readable banner instead of a silent black screen */
 .videohint.mediaerr .errbox {
-  font-size: 10px;
+  font-size: var(--fs-xs);
   line-height: 1.7;
-  color: #fff5ec;
-  background: rgba(178, 58, 46, 0.94);
-  border: 2px solid #2a1a12;
-  border-radius: 6px;
+  color: var(--cream-lite);
+  background: var(--danger);
+  border: 2px solid var(--ink-deep);
+  border-radius: var(--radius);
   max-width: 82%;
   padding: 14px 18px;
-  text-shadow: 2px 2px 0 #000;
-  box-shadow: 4px 4px 0 #2a1a12;
+  text-shadow: 2px 2px 0 var(--black);
+  box-shadow: 4px 4px 0 var(--ink-deep);
 }
 
 /* ---------- Meow Feed ---------- */
@@ -457,9 +447,9 @@ body {
 .meowframe {
   width: 100%;
   aspect-ratio: 4 / 3;
-  background: #fff;
-  border: 3px solid var(--ink);
-  box-shadow: 4px 4px 0 rgba(42, 36, 56, 0.3);
+  background: var(--white);
+  border: var(--border);
+  box-shadow: var(--shadow-lg);
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -480,14 +470,14 @@ body {
 }
 
 .meowempty {
-  font-size: 16px;
+  font-size: var(--fs-lg);
   line-height: 2;
   color: var(--ginger);
   text-align: center;
 }
 
 .meowcap {
-  font-size: 7px;
+  font-size: var(--fs-3xs);
   letter-spacing: 0.5px;
   color: var(--ink-soft);
   text-align: center;
@@ -496,7 +486,7 @@ body {
 /* ---------- footer ---------- */
 .pagefoot {
   text-align: center;
-  font-size: 7px;
+  font-size: var(--fs-3xs);
   letter-spacing: 1px;
   color: var(--ink-soft);
   padding: 12px;
@@ -513,8 +503,8 @@ body {
 .cam {
   position: relative;
   aspect-ratio: 1 / 1;
-  background: #000;
-  border: 3px solid var(--ink);
+  background: var(--black);
+  border: var(--border);
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -541,14 +531,14 @@ body {
 .cam.remote { border-color: var(--pink); }
 
 .camlabel {
-  font-size: 7px;
+  font-size: var(--fs-3xs);
   letter-spacing: 0.5px;
   color: var(--ink-soft);
   text-align: center;
   padding: 4px;
 }
 
-.camtoggle.on { background: var(--pink); color: #fff; border-color: var(--pink); }
+.camtoggle.on { background: var(--pink); color: var(--white); border-color: var(--pink); }
 
 .chat {
   flex: 1;
@@ -556,8 +546,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  background: #fff;
-  border: 3px solid var(--ink);
+  background: var(--white);
+  border: var(--border);
   padding: 8px;
 }
 
@@ -573,7 +563,7 @@ body {
 
 .chatempty {
   margin: auto;
-  font-size: 8px;
+  font-size: var(--fs-2xs);
   color: var(--ink-soft);
   font-family: var(--pixel-font);
 }
@@ -589,7 +579,7 @@ body {
 .msg.mine { align-self: flex-end; text-align: right; }
 
 .msgwho {
-  font-size: 7px;
+  font-size: var(--fs-3xs);
   font-family: var(--pixel-font);
   letter-spacing: 0.5px;
   color: var(--ink-soft);
@@ -598,12 +588,12 @@ body {
 .msg.mine .msgwho { color: var(--ginger-deep); }
 
 .msgtext {
-  font-size: 13px;
+  font-size: var(--fs-md);
   line-height: 1.35;
   color: var(--ink);
   background: var(--panel);
   padding: 5px 8px;
-  border: 2px solid var(--ink);
+  border: var(--border-2);
   word-break: break-word;
 }
 
@@ -615,10 +605,10 @@ body {
   flex: 1;
   min-width: 0;
   font-family: "Courier New", monospace;
-  font-size: 13px;
+  font-size: var(--fs-md);
   color: var(--ink);
-  background: #fff;
-  border: 3px solid var(--ink);
+  background: var(--white);
+  border: var(--border);
   padding: 7px;
 }
 

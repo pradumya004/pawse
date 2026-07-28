@@ -1,0 +1,64 @@
+/*
+  src/tokens.css — Pawse design tokens (SINGLE SOURCE OF TRUTH).
+
+  Every color, text size, border, and shadow the UI uses is named here.
+  Change a value in this file and the whole app follows — this is the
+  foundation the P1 "vibe pass" sits on. Framework-agnostic plain CSS so
+  the extension (Track A) can import the exact same file later (P1-8).
+*/
+:root {
+  /* ---------- COLOR ---------- */
+  --bg: #f4ecd8;
+  --panel: #e7dabc;
+  --panel-edge: #b8ac92;
+  --ink: #2a2438;          /* primary text / chunky borders */
+  --ink-soft: #7a6f5d;     /* muted text, hints */
+  --ink-deep: #2a1a12;     /* warm near-black (error edge/shadow) */
+  --ginger: #ef7d1a;       /* brand / primary CTA */
+  --ginger-deep: #d9660a;  /* CTA pressed / accent */
+  --pink: #e85d86;         /* secondary accent */
+  --live: #3a9d4a;         /* online / success */
+  --off: #d9463f;          /* offline / stop */
+  --danger: #b23a2e;       /* error banner background */
+  --white: #ffffff;
+  --black: #000000;
+  --cream-lite: #fff5ec;   /* text on danger */
+
+  /* ---------- TYPE ---------- */
+  --pixel-font: "PressStart", "Courier New", monospace;
+  --fs-3xs: 7px;
+  --fs-2xs: 8px;   /* most common body-accent size */
+  --fs-xs: 10px;   /* was 9–10px → merged */
+  --fs-sm: 11px;
+  --fs-md: 13px;
+  --fs-lg: 16px;   /* was 15–16px → merged */
+  --fs-xl: 20px;
+  --fs-2xl: 28px;
+
+  /* ---------- SPACING (4px base) ---------- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+
+  /* ---------- BORDERS & RADIUS ---------- */
+  --border: 3px solid var(--ink);        /* the chunky pixel border */
+  --border-2: 2px solid var(--ink);
+  --border-thin: 1px solid var(--ink-soft);
+  --border-dash: 2px dashed var(--ink-soft);
+  --radius: 6px;
+
+  /* ---------- SHADOWS (hard pixel drop) ---------- */
+  --ink-shadow: rgba(42, 36, 56, 0.35);
+  --shadow-sm: 2px 2px 0 var(--ink);
+  --shadow-md: 3px 3px 0 var(--ink-shadow);
+  --shadow-lg: 4px 4px 0 var(--ink-shadow);
+  --shadow-xl: 6px 6px 0 var(--ink-shadow);
+  --shadow-2xl: 7px 7px 0 var(--ink-shadow);
+
+  /* ---------- Z-INDEX ---------- */
+  --z-scanlines: 100;
+}
