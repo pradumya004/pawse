@@ -34,6 +34,7 @@
 |---|------|------|--------|
 | P1-1 | Room UI redesign: compact header, collapsible room code, **3 toggles (📷/🎤/💬)**, chat on→cams 2-col + panel / off→cams stacked bigger, video-as-hero (trim padding) | Design | ⬜ |
 | P1-2 | Cuter consistent theme (cats, stickers, reactions) from the design system | Design | ⬜ |
+| P1-2b | **Favicon + tab identity** — player has NO favicon (blank tab icon); add pixel-cat favicon + proper `<title>` + social preview (og:image). Quick win | Design/Sales | ⬜ |
 | P1-3 | Meme-feed repeat fix (bigger pool, more subreddits, de-dupe, refresh) | Dev | ⬜ |
 | P1-4 | Reactions (floating emoji) + presence polish ("paused", "buffering") | Design/Customer | ⬜ |
 | P1-5 | Mobile / tablet responsiveness (real device test) | Design | ⬜ |
