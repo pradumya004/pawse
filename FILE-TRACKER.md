@@ -17,7 +17,7 @@
 ---
 
 ## Execution plan → see [docs/PRODUCT-PLAN.md](docs/PRODUCT-PLAN.md)
-The prioritized P0/P1/P2 queue + TURN & no-DRM decisions live there (single source). **Current:** Path B TURN · P0-3/P0-4/P0-5 ✅ done · next P0-6 (design tokens).
+The prioritized P0/P1/P2 queue + TURN & no-DRM decisions live there (single source). **Current:** Path B TURN · P0-3/P0-4/P0-5/P0-6 ✅ done · next P0-7 (error/empty/loading states).
 
 ## Timeline
 
@@ -36,7 +36,8 @@ The prioritized P0/P1/P2 queue + TURN & no-DRM decisions live there (single sour
 ## Current position
 
 - **v1 LIVE:** app https://pawsetv.vercel.app · relay wss://pawse-relay.onrender.com · both tracks on cloud.
-- **▶ P0 QUEUE:** P0-3 ✅, P0-4 ✅, P0-5 ✅ shipped. **Next: P0-6 (design tokens) → P0-7 (error/empty/loading states).** See `docs/PRODUCT-PLAN.md`.
+- **▶ P0 QUEUE:** P0-3 ✅, P0-4 ✅, P0-5 ✅, P0-6 ✅ shipped. **Next: P0-7 (error/empty/loading states)** → P1 room redesign + vibe pass. See `docs/PRODUCT-PLAN.md`.
+- **P0-6 (design tokens) ✅:** `player/src/tokens.css` is the single source of truth (color/type/border/shadow/spacing/z as CSS vars). `main.jsx` imports it before `styles.css`; `styles.css` swept to `var(--…)` (0 raw hex, 0 raw px font-sizes). Framework-agnostic → extension imports the same file in P1-8. Type scale: `--fs-3xs`(7) `--fs-2xs`(8) `--fs-xs`(10) `--fs-sm`(11) `--fs-md`(13) `--fs-lg`(16) `--fs-xl`(20) `--fs-2xl`(28). Borders `--border`/`--border-2`/`--border-thin`/`--border-dash`; shadows `--shadow-sm..2xl`.
 - **P0-5 (share link + name-required) ✅:** `?room=CODE` invite lands on JOIN panel; a name is now REQUIRED to create/join (🐱 nudge). Fixed a bug where old builds saved `"Guest"` as the name → invite auto-joined as Guest; now never persist `"Guest"` and treat a stored `"Guest"` as no-name.
 - **P0-3 (codec safety net) ✅:** runtime detection in `PawseClient.attachVideo` — `error`/zero video dims → red banner over the player ("convert to MP4 H.264+AAC"); `webkitAudioDecodedByteCount`==0 after playback → dynamic `audioMissing` "🔇 no sound" hint (replaced the old always-on scare hint). Flags reset per file via `_resetMediaChecks()`.
 - **Chrome Web Store listing PREPPED:** pixel-cat icons wired into manifest; extension packaged to `build/pawse-extension-v0.1.0.zip` (valid, forward slashes); privacy policy → https://pawsetv.vercel.app/privacy.html; listing copy in `docs/STORE-LISTING.md`. **▶ user: pay $5 dev fee → upload zip → paste copy → screenshots → submit.**

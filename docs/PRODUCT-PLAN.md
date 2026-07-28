@@ -25,7 +25,7 @@
 | P0-3 | **Codec safety net** — detect an unplayable file (no decodable audio/video) → clear message, never a silent black screen | Customer/Dev | ✅ done — runtime detect: `error`/zero-dims → banner; `webkitAudioDecodedByteCount`==0 → dynamic "no sound" hint (replaced the old always-on one) |
 | P0-4 | **Clear Create/Join chooser** — two buttons, container swaps | Design/UX | ✅ done |
 | P0-5 | **Shareable room LINK** — click → lands straight in the room (`?room=CODE`) | UX/Sales | ✅ done |
-| P0-6 | **Design system / single source of truth** — one tokens file both clients import | Dev/Design | ⬜ |
+| P0-6 | **Design system / single source of truth** — one tokens file both clients import | Dev/Design | ✅ done — `player/src/tokens.css` (color/type/border/shadow/spacing/z). styles.css fully swept to `var(--…)`, 0 raw hex. Extension imports same file in P1-8. |
 | P0-7 | **Error / empty / loading states** everywhere | UX | ⬜ |
 
 ## P1 — "polished, delightful product you'd show off"
@@ -69,4 +69,4 @@
 ---
 
 ## Current focus
-Path B TURN. **P0-3 + P0-4 + P0-5 shipped.** Next: **P0-6 (design system / tokens)** → **P0-7 (error/empty/loading states)**, then the P1 room redesign + vibe pass (vibe pass sits on top of P0-6 tokens).
+Path B TURN. **P0-3 + P0-4 + P0-5 + P0-6 shipped.** Next: **P0-7 (error/empty/loading states)**, then P1 room redesign + vibe pass (now unblocked — re-theming = edit `tokens.css`).
