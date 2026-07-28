@@ -138,7 +138,7 @@ export class PawseClient {
       // name was saved, so we never silently rejoin as "Guest".
       const saved = localStorage.getItem("pawse_room");
       const savedName = localStorage.getItem("pawse_name");
-      if (saved && savedName && savedName.trim() && !this.room) {
+      if (saved && savedName && savedName.trim() && savedName !== "Guest" && !this.room) {
         this._send("join", { room: saved, name: savedName, uid: this.uid });
       }
       this._emit();
@@ -175,13 +175,15 @@ export class PawseClient {
   // ---- room actions ----
 
   create(name) {
-    this.myName = name || "Guest";
-    localStorage.setItem("pawse_name", this.myName);
+    const n = (name || "").trim();
+    this.myName = n || "Guest";
+    if (n) localStorage.setItem("pawse_name", n); // only persist a REAL name — never "Guest"
     this._send("create", { name: this.myName, uid: this.uid });
   }
   join(code, name) {
-    this.myName = name || "Guest";
-    localStorage.setItem("pawse_name", this.myName);
+    const n = (name || "").trim();
+    this.myName = n || "Guest";
+    if (n) localStorage.setItem("pawse_name", n); // only persist a REAL name — never "Guest"
     this._send("join", { room: code, name: this.myName, uid: this.uid });
   }
   leave() {

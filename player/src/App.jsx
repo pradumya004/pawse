@@ -27,7 +27,11 @@ export default function App() {
     messages: [],
     subsOn: false,
   });
-  const [name, setName] = useState(localStorage.getItem("pawse_name") || "");
+  // treat a leftover "Guest" as "no name yet" — old builds saved it, and we must NOT auto-join with it
+  const [name, setName] = useState(() => {
+    const s = localStorage.getItem("pawse_name");
+    return s && s !== "Guest" ? s : "";
+  });
   const [code, setCode] = useState("");
   const [copied, setCopied] = useState(false);
   const [chatText, setChatText] = useState("");
