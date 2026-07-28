@@ -299,6 +299,33 @@ body {
   padding: 8px;
 }
 
+/* P1-1: 3-toggle bar + code reveal + video-as-hero trims */
+.btn.ghost.tiny { font-size: var(--fs-sm); padding: 2px 6px; box-shadow: none; }
+
+.togglebar { display: flex; gap: 8px; }
+.toggle {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-family: var(--pixel-font);
+  font-size: 18px; /* the emoji */
+  padding: 8px 4px;
+  color: var(--ink);
+  background: var(--white);
+  border: var(--border-2);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+}
+.toggle .tlabel { font-size: var(--fs-3xs); letter-spacing: 0.5px; }
+.toggle.on { background: var(--pink); color: var(--white); border-color: var(--pink); }
+.toggle:active { transform: translate(2px, 2px); box-shadow: none; }
+
+/* video-as-hero: trim the gaps so the movie fills more */
+.roomGrid { gap: 10px; }
+.stageMain { gap: 8px; }
+
 .divider {
   display: flex;
   align-items: center;
@@ -514,9 +541,11 @@ body {
 /* ---------- Together Layer: cams + chat ---------- */
 .cams {
   display: grid;
-  grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
+.cams.twocol { grid-template-columns: 1fr 1fr; }
+.cams.stacked { grid-template-columns: 1fr; }
+.cams.stacked .cam { aspect-ratio: 16 / 10; } /* bigger cams when chat is hidden */
 
 .cam {
   position: relative;

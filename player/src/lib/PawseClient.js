@@ -66,8 +66,9 @@ export class PawseClient {
 
     // ---- Together Layer (Phase 5): A/V call + chat ----
     this.callPc = null; // SEPARATE peer connection for the webcam/mic call
-    this.localCall = null; // our getUserMedia stream
-    this.cameraOn = false;
+    this.localStream = null; // our local webcam/mic stream (tracks added as toggled)
+    this.camOn = false;
+    this.micOn = false;
     this.partnerCam = false; // is the partner's camera stream flowing?
     this.makingOffer = false; // perfect-negotiation flags (avoid offer glare)
     this.ignoreOffer = false;
@@ -121,7 +122,8 @@ export class PawseClient {
       formatWarn: this.formatWarn,
       progress: this.progress,
       transfer: this.transfer,
-      cameraOn: this.cameraOn,
+      camOn: this.camOn,
+      micOn: this.micOn,
       partnerCam: this.partnerCam,
       messages: this.messages,
       subsOn: this.subsOn,
@@ -279,6 +281,11 @@ export class PawseClient {
     this._send("leave");
     localStorage.removeItem("pawse_room");
     this._teardown();
+    // tear down the A/V call too, so the camera/mic don't linger after leaving
+    this._removeLocal("video");
+    this._removeLocal("audio");
+    if (this.callPc) { try { this.callPc.close(); } catch { /* */ } this.callPc = null; }
+    this.partnerCam = false;
     Object.assign(this, {
       room: null,
       role: null,
@@ -290,6 +297,8 @@ export class PawseClient {
       progress: 0,
       transfer: "idle",
       status: "connected",
+      camOn: false,
+      micOn: false,
     });
     this._emit();
   }
@@ -584,9 +593,13 @@ export class PawseClient {
     pc.onconnectionstatechange = () =>
       console.log("[Pawse] call conn:", pc.connectionState);
     pc.ontrack = (e) => {
-      console.log("[Pawse] call ontrack — partner stream in");
-      this.partnerCam = true;
       if (this.onRemoteStream) this.onRemoteStream(e.streams[0]);
+      if (e.track.kind === "video") {
+        this.partnerCam = true;
+        e.track.onmute = () => { this.partnerCam = false; this._emit(); };
+        e.track.onunmute = () => { this.partnerCam = true; this._emit(); };
+        e.track.onended = () => { this.partnerCam = false; this._emit(); };
+      }
       this._emit();
     };
     // Adding tracks (or the partner doing so) fires this — we (re)offer.
@@ -647,29 +660,53 @@ export class PawseClient {
     }
   }
 
-  /** Turn our webcam+mic on and add the tracks to the call (triggers an offer). */
-  async startCamera() {
+  /** Toggle our webcam on/off (adds/removes the video track → renegotiates). */
+  async toggleCamera() {
+    if (this.camOn) { this._removeLocal("video"); this.camOn = false; }
+    else { this.camOn = await this._addLocal("video"); }
+    this._emit();
+  }
+
+  /** Toggle our mic on/off (adds/removes the audio track → renegotiates). */
+  async toggleMic() {
+    if (this.micOn) { this._removeLocal("audio"); this.micOn = false; }
+    else { this.micOn = await this._addLocal("audio"); }
+    this._emit();
+  }
+
+  /** Acquire ONE kind of track (video|audio) and add it to the call. */
+  async _addLocal(kind) {
     try {
       const pc = this._ensureCallPc();
-      this.localCall = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      if (this.onLocalStream) this.onLocalStream(this.localCall);
-      for (const track of this.localCall.getTracks()) pc.addTrack(track, this.localCall);
-      this.cameraOn = true;
-      this._emit();
+      const stream = await navigator.mediaDevices.getUserMedia(
+        kind === "video" ? { video: true } : { audio: true },
+      );
+      const track = stream.getTracks()[0];
+      if (!track) return false;
+      if (!this.localStream) this.localStream = new MediaStream();
+      this.localStream.addTrack(track);
+      pc.addTrack(track, this.localStream); // fires onnegotiationneeded
+      if (this.onLocalStream) this.onLocalStream(this.localStream);
+      return true;
     } catch (err) {
-      console.warn("[Pawse] camera/mic blocked", err);
-      this.cameraOn = false;
-      this._emit();
+      console.warn(`[Pawse] ${kind} blocked`, err);
+      return false;
     }
   }
 
-  /** Stop sending our camera/mic (simple version: stop the local tracks). */
-  stopCamera() {
-    if (this.localCall) this.localCall.getTracks().forEach((t) => t.stop());
-    this.localCall = null;
-    if (this.onLocalStream) this.onLocalStream(null);
-    this.cameraOn = false;
-    this._emit();
+  /** Stop + remove ONE kind of local track (fully releases the device / LED). */
+  _removeLocal(kind) {
+    if (!this.localStream) return;
+    const tracks =
+      kind === "video" ? this.localStream.getVideoTracks() : this.localStream.getAudioTracks();
+    for (const t of tracks) {
+      const sender = this.callPc?.getSenders().find((s) => s.track === t);
+      if (sender && this.callPc) this.callPc.removeTrack(sender); // fires onnegotiationneeded
+      t.stop();
+      this.localStream.removeTrack(t);
+    }
+    if (this.onLocalStream)
+      this.onLocalStream(this.localStream.getTracks().length ? this.localStream : null);
   }
 
   /**

@@ -23,7 +23,8 @@ export default function App() {
     error: null,
     progress: 0,
     transfer: "idle",
-    cameraOn: false,
+    camOn: false,
+    micOn: false,
     partnerCam: false,
     messages: [],
     subsOn: false,
@@ -39,6 +40,8 @@ export default function App() {
   const [lobbyMode, setLobbyMode] = useState("choose"); // "choose" = pick create/join, "join" = code entry
   const [inviteRoom, setInviteRoom] = useState(null); // room code pulled from a ?room= invite link
   const [needName, setNeedName] = useState(false); // true when user tries to create/join without a name
+  const [showChat, setShowChat] = useState(true); // 💬 toggle — off = cams stack bigger
+  const [showCode, setShowCode] = useState(false); // room code masked until revealed
 
   const clientRef = useRef(null);
   const videoRef = useRef(null);
@@ -140,10 +143,8 @@ export default function App() {
     setCopied(true);
     setTimeout(() => setCopied(false), 1400);
   };
-  const toggleCam = () =>
-    s.cameraOn
-      ? clientRef.current.stopCamera()
-      : clientRef.current.startCamera();
+  const toggleCam = () => clientRef.current.toggleCamera();
+  const toggleMic = () => clientRef.current.toggleMic();
   const sendChat = (e) => {
     e.preventDefault();
     clientRef.current.sendChat(chatText);
@@ -270,7 +271,10 @@ export default function App() {
             <div className="roombar">
               <div className="roomcode">
                 <span className="label">ROOM</span>{" "}
-                <span className="code">{s.room}</span>
+                <span className="code">{showCode ? s.room : "••••••"}</span>
+                <button className="btn ghost tiny" onClick={() => setShowCode((v) => !v)}>
+                  {showCode ? "🙈" : "👁"}
+                </button>
               </div>
               <button className="btn small" onClick={onCopy}>
                 {copied ? "✓ LINK COPIED" : "📋 COPY LINK"}
@@ -285,7 +289,7 @@ export default function App() {
               </button>
             </div>
 
-            <div className="roomGrid">
+            <div className={"roomGrid" + (showChat ? "" : " nochat")}>
               <section className="stageMain">
                 <div className="roomtools">
                   {isHost && (
@@ -303,7 +307,7 @@ export default function App() {
                     </>
                   )}
                   <label htmlFor="subs" className="btn small">
-                    💬 {s.subsOn ? "SUBTITLES ✓" : "ADD SUBTITLES"}
+                    📝 {s.subsOn ? "SUBTITLES ✓" : "ADD SUBTITLES"}
                   </label>
                   <input
                     id="subs"
@@ -364,12 +368,25 @@ export default function App() {
                 </div>
               </section>
 
-              {/* ---- Together sidebar: cams + chat ---- */}
+              {/* ---- Together sidebar: 3 toggles → cams → chat ---- */}
               <aside className="sidebar">
-                <div className="cams">
-                  <div
-                    className={"cam remote" + (s.partnerCam ? "" : " empty")}
+                <div className="togglebar">
+                  <button className={"toggle" + (s.camOn ? " on" : "")} onClick={toggleCam}>
+                    📷<span className="tlabel">{s.camOn ? "on" : "cam"}</span>
+                  </button>
+                  <button className={"toggle" + (s.micOn ? " on" : "")} onClick={toggleMic}>
+                    🎤<span className="tlabel">{s.micOn ? "on" : "mic"}</span>
+                  </button>
+                  <button
+                    className={"toggle" + (showChat ? " on" : "")}
+                    onClick={() => setShowChat((v) => !v)}
                   >
+                    💬<span className="tlabel">chat</span>
+                  </button>
+                </div>
+
+                <div className={"cams " + (showChat ? "twocol" : "stacked")}>
+                  <div className={"cam remote" + (s.partnerCam ? "" : " empty")}>
                     <video ref={remoteCamRef} autoPlay playsInline />
                     {!s.partnerCam && (
                       <span className="camlabel">
@@ -379,46 +396,41 @@ export default function App() {
                       </span>
                     )}
                   </div>
-                  <div className={"cam local" + (s.cameraOn ? "" : " empty")}>
+                  <div className={"cam local" + (s.camOn ? "" : " empty")}>
                     <video ref={localCamRef} autoPlay playsInline muted />
-                    {!s.cameraOn && <span className="camlabel">you</span>}
+                    {!s.camOn && <span className="camlabel">you</span>}
                   </div>
                 </div>
 
-                <button
-                  className={"btn small camtoggle" + (s.cameraOn ? " on" : "")}
-                  onClick={toggleCam}
-                >
-                  {s.cameraOn ? "📷 STOP CAMERA" : "📷 START CAMERA"}
-                </button>
-
-                <div className="chat">
-                  <div className="chatlog" ref={chatLogRef}>
-                    {s.messages.length === 0 && (
-                      <div className="chatempty">say hi 👋</div>
-                    )}
-                    {s.messages.map((m, i) => (
-                      <div key={i} className={"msg" + (m.mine ? " mine" : "")}>
-                        <span className="msgwho">
-                          {m.mine ? "you" : s.partnerName || "them"}
-                        </span>
-                        <span className="msgtext">{m.text}</span>
-                      </div>
-                    ))}
+                {showChat && (
+                  <div className="chat">
+                    <div className="chatlog" ref={chatLogRef}>
+                      {s.messages.length === 0 && (
+                        <div className="chatempty">say hi 👋</div>
+                      )}
+                      {s.messages.map((m, i) => (
+                        <div key={i} className={"msg" + (m.mine ? " mine" : "")}>
+                          <span className="msgwho">
+                            {m.mine ? "you" : s.partnerName || "them"}
+                          </span>
+                          <span className="msgtext">{m.text}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <form className="chatbar" onSubmit={sendChat}>
+                      <input
+                        className="chatinput"
+                        placeholder="type something cute..."
+                        maxLength={200}
+                        value={chatText}
+                        onChange={(e) => setChatText(e.target.value)}
+                      />
+                      <button className="btn small" type="submit">
+                        SEND
+                      </button>
+                    </form>
                   </div>
-                  <form className="chatbar" onSubmit={sendChat}>
-                    <input
-                      className="chatinput"
-                      placeholder="type something cute..."
-                      maxLength={200}
-                      value={chatText}
-                      onChange={(e) => setChatText(e.target.value)}
-                    />
-                    <button className="btn small" type="submit">
-                      SEND
-                    </button>
-                  </form>
-                </div>
+                )}
               </aside>
             </div>
           </div>
