@@ -303,12 +303,16 @@ export default function App() {
                     <span className="filename">🎞️ {s.fileName}</span>
                   )}
                 </div>
-                {isHost && (
+                {s.audioMissing && (
                   <div className="tinyhint fmt">
-                    ⚠️ no sound? your file likely has AC3/DTS/Dolby audio
-                    (browsers can't play it). use MP4 with AAC audio, or
-                    re-encode:{" "}
-                    <code>ffmpeg -i in.mkv -c:v copy -c:a aac out.mp4</code>
+                    🔇 no sound — this file's audio (likely AC3/DTS/Dolby) can't be
+                    decoded in the browser.
+                    {isHost && (
+                      <>
+                        {" "}re-encode to AAC:{" "}
+                        <code>ffmpeg -i in.mkv -c:v copy -c:a aac out.mp4</code>
+                      </>
+                    )}
                   </div>
                 )}
 
@@ -336,7 +340,13 @@ export default function App() {
                     controls
                     playsInline
                   />
-                  {s.hint && <div className="videohint">{s.hint}</div>}
+                  {s.mediaError ? (
+                    <div className="videohint mediaerr">
+                      <span className="errbox">{s.mediaError}</span>
+                    </div>
+                  ) : (
+                    s.hint && <div className="videohint">{s.hint}</div>
+                  )}
                 </div>
               </section>
 

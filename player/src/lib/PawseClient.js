@@ -54,6 +54,9 @@ export class PawseClient {
     this.progress = 0;
     this.transfer = "idle"; // idle | sending | receiving | ready
     this._lastPct = -1;
+    this.mediaError = null; // P0-3: user-facing message when the file can't be decoded
+    this.audioMissing = false; // P0-3: video plays but audio codec (AC3/DTS) is undecodable
+    this._audioChecked = false;
 
     this._chunks = [];
     this._recvBytes = 0;
@@ -110,6 +113,8 @@ export class PawseClient {
       partnerName: this.partnerName,
       fileName: this.fileName,
       hint: this.hint,
+      mediaError: this.mediaError,
+      audioMissing: this.audioMissing,
       progress: this.progress,
       transfer: this.transfer,
       cameraOn: this.cameraOn,
@@ -125,6 +130,56 @@ export class PawseClient {
     el.addEventListener("play", () => this._reportControl("play"));
     el.addEventListener("pause", () => this._reportControl("pause"));
     el.addEventListener("seeked", () => this._reportControl("seek"));
+    // P0-3 codec safety net — catch unplayable files instead of a silent black screen.
+    el.addEventListener("error", () => this._checkMediaError());
+    el.addEventListener("loadedmetadata", () => this._checkVideoTrack());
+    el.addEventListener("playing", () => this._scheduleAudioCheck());
+  }
+
+  // ---- P0-3: codec safety net ----
+
+  // Clear all playability flags whenever a fresh file is loaded.
+  _resetMediaChecks() {
+    this.mediaError = null;
+    this.audioMissing = false;
+    this._audioChecked = false;
+    clearTimeout(this._audioTimer);
+  }
+
+  // <video> 'error' → almost always an undecodable container/codec (MKV, HEVC, etc.).
+  _checkMediaError() {
+    if (!this.video?.error) return;
+    this.mediaError =
+      "this file can't play in the browser — unsupported format or codec (e.g. MKV / HEVC). " +
+      "convert it to MP4 (H.264 + AAC) and pick it again. 😿";
+    this.audioMissing = false; // a hard error supersedes the soft audio warning
+    this._emit();
+  }
+
+  // 'loadedmetadata' → no video dimensions means the video track itself is undecodable.
+  _checkVideoTrack() {
+    if (!this.video) return;
+    if (this.video.videoWidth === 0 && this.video.videoHeight === 0) {
+      this.mediaError =
+        "the browser can't decode this file's video track. convert to MP4 (H.264 + AAC). 😿";
+      this._emit();
+    }
+  }
+
+  // 'playing' → Chrome exposes decoded audio bytes; if none accrue after real playback,
+  // the audio codec (AC3/DTS/Dolby) is undecodable → picture shows but there's no sound.
+  _scheduleAudioCheck() {
+    if (this._audioChecked || this.mediaError) return;
+    clearTimeout(this._audioTimer);
+    this._audioTimer = setTimeout(() => {
+      const v = this.video;
+      if (!v || v.paused || v.currentTime < 0.3) return; // needs real playback to judge
+      const decoded = v.webkitAudioDecodedByteCount;
+      if (typeof decoded !== "number") return; // API not supported → skip silently
+      this._audioChecked = true;
+      this.audioMissing = decoded === 0;
+      this._emit();
+    }, 1500);
   }
 
   // ---- connection + resilience ----
@@ -214,6 +269,7 @@ export class PawseClient {
     this.transfer = "idle";
     this.video.srcObject = null;
     this.video.src = URL.createObjectURL(file); // host plays native file locally
+    this._resetMediaChecks();
     this._teardown();
     this._maybeStartTransfer();
     this._emit();
@@ -233,7 +289,7 @@ export class PawseClient {
         if (msg.partnerName) this.partnerName = msg.partnerName;
         this.status = this.role === "host" ? "hosting" : "in room";
         localStorage.setItem("pawse_room", this.room);
-        localStorage.setItem("pawse_name", this.myName);
+        if (this.myName && this.myName !== "Guest") localStorage.setItem("pawse_name", this.myName);
         this._maybeStartTransfer();
         this._emit();
         break;
@@ -418,6 +474,7 @@ export class PawseClient {
     const blob = new Blob(this._chunks, { type: this._meta?.mime || "video/mp4" });
     this.video.srcObject = null;
     this.video.src = URL.createObjectURL(blob); // partner plays the NATIVE file
+    this._resetMediaChecks();
     this.fileName = this._meta?.name || "movie";
     this.transfer = "ready";
     this.progress = 1;
