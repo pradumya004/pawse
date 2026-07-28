@@ -39,7 +39,7 @@
 | P1-2c | · **Micro-animations & effects** — button/hover feedback, smooth view transitions, floating paws/hearts, a little confetti/😻 burst on "partner joined" & reactions | Design | ⬜ |
 | P1-2d | · **Typography system** — consistent pixel type *scale* (sizes/weights/spacing as tokens), readable everywhere, Press Start 2P for accents + a readable pixel body font | Design | ⬜ |
 | P1-2e | · **Overall cozy/cool vibe** — cohesive Cream & Ginger, subtle textures (scanlines/paper), dark "movie-night" mode option | Design | ⬜ |
-| P1-2f | · **Favicon + tab identity** — player has NO favicon (blank tab icon); add pixel-cat favicon + proper `<title>` + social preview (og:image). Quick win | Design/Sales | ⬜ |
+| P1-2f | · **Favicon + tab identity** | Design/Sales | ✅ done — `public/favicon.svg` (pixel-cat on cream), title, description, theme-color, OG/Twitter tags. TODO later: dedicated 1200×630 PNG og:image |
 | | *(all of P1-2 sits on top of P0-6 design tokens — do tokens first so it stays consistent & nothing breaks)* | | |
 | P1-3 | Meme-feed repeat fix (bigger pool, more subreddits, de-dupe, refresh) | Dev | ⬜ |
 | P1-4 | Reactions (floating emoji) + presence polish ("paused", "buffering") | Design/Customer | ⬜ |
