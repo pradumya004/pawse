@@ -544,8 +544,14 @@ body {
   gap: 8px;
 }
 .cams.twocol { grid-template-columns: 1fr 1fr; }
-.cams.stacked { grid-template-columns: 1fr; }
-.cams.stacked .cam { aspect-ratio: 16 / 10; } /* bigger cams when chat is hidden */
+/* chat hidden → the two cams fill ALL remaining sidebar height (no dead space) */
+.cams.stacked {
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr 1fr;
+  flex: 1;
+  min-height: 0;
+}
+.cams.stacked .cam { aspect-ratio: auto; min-height: 0; }
 
 .cam {
   position: relative;
