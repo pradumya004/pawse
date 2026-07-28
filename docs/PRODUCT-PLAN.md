@@ -32,7 +32,7 @@
 
 | # | Item | Lens | Status |
 |---|------|------|--------|
-| P1-1 | Room UI redesign: compact header, collapsible room code, **3 toggles (📷/🎤/💬)**, chat on→cams 2-col + panel / off→cams stacked bigger, video-as-hero (trim padding) | Design | ⬜ |
+| P1-1 | Room UI redesign: compact header, collapsible room code, **3 toggles (📷/🎤/💬)**, chat on→cams 2-col + panel / off→cams stacked bigger, video-as-hero (trim padding) | Design | ✅ done — independent camera/mic toggles (true device release), 💬 hides chat + stacks cams bigger, code masked behind 👁 reveal, trimmed gaps |
 | P1-2 | **The "vibe" pass** (make it genuinely look good, not just functional): | Design | ⬜ |
 | P1-2a | · **Homepage/lobby glow-up** — it should feel like a cute product, not a form. Hero, warmth, personality | Design | ⬜ |
 | P1-2b | · **Sticker set** — pixel cats, paws, hearts, popcorn, film reel placed tastefully (not clutter) | Design | ⬜ |
@@ -69,4 +69,4 @@
 ---
 
 ## Current focus
-Path B TURN. **ALL P0 SHIPPED (P0-3→P0-7).** Next: **P1 — room redesign (P1-1) + the vibe pass (P1-2)**, now fully unblocked (re-theming = edit `tokens.css`). Recommended P1 order: P1-1 room redesign → P1-2a–f vibe pass → P1-3 meme-feed → onward.
+Path B TURN. **ALL P0 SHIPPED. P1-1 (room redesign) SHIPPED.** Next: **P1-2 the vibe pass (P1-2a–f)** — homepage glow-up, stickers, micro-animations, typography scale, cozy/dark mode, favicon. Sits on the P0-6 tokens. Then P1-3 meme-feed → P1-4 reactions → onward.

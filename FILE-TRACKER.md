@@ -17,7 +17,7 @@
 ---
 
 ## Execution plan → see [docs/PRODUCT-PLAN.md](docs/PRODUCT-PLAN.md)
-The prioritized P0/P1/P2 queue + TURN & no-DRM decisions live there (single source). **Current:** Path B TURN · ALL P0 (P0-3→P0-7) ✅ done · next P1 room redesign + vibe pass.
+The prioritized P0/P1/P2 queue + TURN & no-DRM decisions live there (single source). **Current:** Path B TURN · ALL P0 ✅ + P1-1 (room redesign) ✅ · next P1-2 vibe pass.
 
 ## Timeline
 
@@ -36,7 +36,8 @@ The prioritized P0/P1/P2 queue + TURN & no-DRM decisions live there (single sour
 ## Current position
 
 - **v1 LIVE:** app https://pawsetv.vercel.app · relay wss://pawse-relay.onrender.com · both tracks on cloud.
-- **▶ P0 QUEUE: ALL DONE** (P0-3→P0-7 ✅). **Next: P1 — room redesign (P1-1) + vibe pass (P1-2), now unblocked by tokens.** See `docs/PRODUCT-PLAN.md`.
+- **▶ ALL P0 DONE + P1-1 DONE.** **Next: P1-2 the vibe pass (homepage glow-up, stickers, animations, typography, dark mode, favicon).** See `docs/PRODUCT-PLAN.md`.
+- **P1-1 (room redesign) ✅:** camera & mic are now INDEPENDENT toggles — `PawseClient.toggleCamera()`/`toggleMic()` add/remove their own track via perfect-negotiation (📷 off truly releases the device/LED); replaced coupled `startCamera/stopCamera` (fields now `camOn`/`micOn`/`localStream`, was `cameraOn`/`localCall`). Sidebar has a 3-toggle bar 📷/🎤/💬; 💬 hides chat → cams switch `.twocol`→`.stacked` (bigger). Room code masked behind 👁 reveal (`showCode`). `ontrack` keys `partnerCam` off the video track (onmute/onended). `leave()` tears the call down. Subtitles icon 💬→📝 to avoid clashing with chat toggle.
 - **P0-7 (error/empty/loading states) ✅:** PawseClient has `error` field surfaced via `_emit`; `case "error"` maps `no_such_room`/`server_full` → friendly msg (no longer corrupts `status`); cleared on retry + on `case "room"`. App: `ready`/`reconnecting` flags; CREATE/JOIN `disabled={!ready}` + "waking up the server…" note (fixes silent no-op during Render cold-start); `.reconnbar` amber strip in-room. Styles token-based.
 - **P0-6 (design tokens) ✅:** `player/src/tokens.css` is the single source of truth (color/type/border/shadow/spacing/z as CSS vars). `main.jsx` imports it before `styles.css`; `styles.css` swept to `var(--…)` (0 raw hex, 0 raw px font-sizes). Framework-agnostic → extension imports the same file in P1-8. Type scale: `--fs-3xs`(7) `--fs-2xs`(8) `--fs-xs`(10) `--fs-sm`(11) `--fs-md`(13) `--fs-lg`(16) `--fs-xl`(20) `--fs-2xl`(28). Borders `--border`/`--border-2`/`--border-thin`/`--border-dash`; shadows `--shadow-sm..2xl`.
 - **P0-5 (share link + name-required) ✅:** `?room=CODE` invite lands on JOIN panel; a name is now REQUIRED to create/join (🐱 nudge). Fixed a bug where old builds saved `"Guest"` as the name → invite auto-joined as Guest; now never persist `"Guest"` and treat a stored `"Guest"` as no-name.
