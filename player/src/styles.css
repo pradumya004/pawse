@@ -255,6 +255,27 @@ body {
 .btn.small { font-size: 8px; padding: 8px 10px; box-shadow: 3px 3px 0 rgba(42, 36, 56, 0.4); }
 .btn.leave { background: #fff; color: var(--pink); border-color: var(--pink); }
 
+/* lobby chooser (P0-4): two stacked action panels that swap on lobbyMode */
+.chooser,
+.joinpanel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* subtle "back" link-button (transparent, on-theme via --ink-soft token) */
+.btn.ghost {
+  background: transparent;
+  color: var(--ink-soft);
+  border-color: transparent;
+  box-shadow: none;
+  font-size: 8px;
+  padding: 6px;
+}
+.btn.ghost:active {
+  transform: none;
+}
+
 .tinyhint {
   text-align: center;
   font-size: 7px;
