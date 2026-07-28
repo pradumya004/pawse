@@ -42,6 +42,8 @@ export default function App() {
   const [needName, setNeedName] = useState(false); // true when user tries to create/join without a name
   const [showChat, setShowChat] = useState(true); // 💬 toggle — off = cams stack bigger
   const [showCode, setShowCode] = useState(false); // room code masked until revealed
+  const [burst, setBurst] = useState(false); // 😻 celebration when the partner joins
+  const prevPartner = useRef(false);
 
   const clientRef = useRef(null);
   const videoRef = useRef(null);
@@ -101,6 +103,17 @@ export default function App() {
       chatLogRef.current.scrollTop = chatLogRef.current.scrollHeight;
   }, [s.messages]);
 
+  // 😻 celebrate the moment the partner joins (false → true), then clear.
+  useEffect(() => {
+    if (s.partnerHere && !prevPartner.current) {
+      setBurst(true);
+      const t = setTimeout(() => setBurst(false), 1800);
+      prevPartner.current = true;
+      return () => clearTimeout(t);
+    }
+    prevPartner.current = s.partnerHere;
+  }, [s.partnerHere]);
+
   const inRoom = !!s.room;
   const isHost = s.role === "host";
   const online = ["connected", "hosting", "in room", "watching"].includes(
@@ -155,6 +168,16 @@ export default function App() {
     <>
       <div className="scanlines" aria-hidden="true" />
 
+      {burst && (
+        <div className="burst" aria-hidden="true">
+          {["😻", "💕", "🎉", "🐾", "💛", "😸", "✨"].map((e, i) => (
+            <span key={i} style={{ left: `${8 + i * 13}%`, animationDelay: `${i * 0.07}s` }}>
+              {e}
+            </span>
+          ))}
+        </div>
+      )}
+
       <header className="topbar">
         <div className="brand">
           <Cat />
@@ -173,6 +196,14 @@ export default function App() {
         {!inRoom ? (
           // ===================== LOBBY =====================
           <div className="lobbyGrid">
+            <div className="stickers" aria-hidden="true">
+              <span className="sticker s1">🐾</span>
+              <span className="sticker s2">💕</span>
+              <span className="sticker s3">🍿</span>
+              <span className="sticker s4">🎬</span>
+              <span className="sticker s5">🐱</span>
+            </div>
+
             <section className="card">
               <div className="paws">🐾</div>
               <h2 className="cardTitle">
@@ -185,6 +216,12 @@ export default function App() {
                 <br />
                 no accounts. no uploads. just you two &amp; a cat. 🐱
               </p>
+
+              <div className="badges">
+                <span className="badge">🎬 your files</span>
+                <span className="badge">📷 see each other</span>
+                <span className="badge">💬 chat</span>
+              </div>
 
               <div className="identity">
                 <label className="label" htmlFor="name">

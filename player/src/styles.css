@@ -326,6 +326,72 @@ body {
 .roomGrid { gap: 10px; }
 .stageMain { gap: 8px; }
 
+/* ===== P1-2 vibe pass: lobby glow-up · stickers · micro-animations ===== */
+
+/* button feedback — subtle lift on hover, punchy press (pixel steps) */
+.btn { transition: transform 0.08s steps(2), filter 0.1s; }
+.btn:hover:not(:disabled) { filter: brightness(1.08); transform: translateY(-2px); }
+
+/* lobby entrance + view-switch fade */
+.card { animation: cardIn 0.45s steps(7) both; }
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+.chooser, .joinpanel { animation: fadeIn 0.25s steps(4) both; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* feature badges under the tagline */
+.badges { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.badge {
+  font-size: var(--fs-3xs);
+  letter-spacing: 0.5px;
+  color: var(--ink);
+  background: var(--panel);
+  border: var(--border-2);
+  padding: 4px 7px;
+  box-shadow: var(--shadow-sm);
+}
+
+/* ambient pixel stickers drifting around the lobby (tasteful, low-key) */
+.lobbyGrid { position: relative; }
+.card, .lobbyArt { position: relative; z-index: 1; } /* content above the stickers */
+.stickers { position: absolute; inset: -14px; pointer-events: none; z-index: 0; }
+.stickers .sticker {
+  position: absolute;
+  font-size: 30px;
+  opacity: 0.5;
+  animation: bob 4s ease-in-out infinite;
+}
+.sticker.s1 { top: 1%;  left: -1%; animation-delay: 0s; }
+.sticker.s2 { top: 5%;  right: 1%; animation-delay: 0.6s; }
+.sticker.s3 { bottom: 3%; left: 2%; animation-delay: 1.2s; }
+.sticker.s4 { bottom: 1%; right: 0%; animation-delay: 0.3s; }
+.sticker.s5 { top: 45%; right: -2%; font-size: 24px; animation-delay: 0.9s; }
+@keyframes bob {
+  0%, 100% { transform: translateY(0) rotate(-4deg); }
+  50% { transform: translateY(-8px) rotate(4deg); }
+}
+
+/* 😻 partner-joined celebration */
+.burst { position: fixed; inset: 0; pointer-events: none; z-index: 90; }
+.burst span {
+  position: absolute;
+  bottom: 34%;
+  font-size: 30px;
+  animation: floatUp 1.8s ease-out forwards;
+}
+@keyframes floatUp {
+  0% { opacity: 0; transform: translateY(24px) scale(0.6); }
+  15% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-180px) scale(1.25); }
+}
+
+/* accessibility: honor reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .card, .chooser, .joinpanel, .sticker, .burst span, .paws { animation: none; }
+}
+
 .divider {
   display: flex;
   align-items: center;
@@ -673,6 +739,7 @@ body {
 @media (max-width: 900px) {
   .stage { align-items: flex-start; }
   .lobbyGrid { grid-template-columns: 1fr; max-width: 460px; gap: 24px; }
+  .stickers { display: none; } /* avoid clutter on small screens */
   .lobbyArt { order: -1; } /* show a cat on top on mobile */
   .roomWrap { height: auto; }
   .roomGrid { grid-template-columns: 1fr; }
