@@ -31,6 +31,7 @@ function pickTwo() {
 export default function MeowFeed({ caption = "while you wait..." }) {
   const [items, setItems] = useState([]);
   const [i, setI] = useState(0);
+  const [loaded, setLoaded] = useState(false); // fetch finished (success or empty)
 
   // Fetch a batch from two random cat subreddits.
   useEffect(() => {
@@ -48,6 +49,7 @@ export default function MeowFeed({ caption = "while you wait..." }) {
         .filter((m) => m && m.url && !m.nsfw && isMedia(m.url))
         .map((m) => ({ url: m.url, title: m.title, sub: m.subreddit }));
       setItems(media);
+      setLoaded(true);
     });
     return () => {
       alive = false;
@@ -61,11 +63,19 @@ export default function MeowFeed({ caption = "while you wait..." }) {
     return () => clearInterval(t);
   }, [items]);
 
+  // A broken/hotlink-blocked image → drop it and move on (never a blank box).
+  const onBroken = (badUrl) => {
+    setItems((prev) => prev.filter((x) => x.url !== badUrl));
+    setI(0);
+  };
+
   if (!items.length) {
     return (
       <div className="meow">
         <div className="meowframe meowempty">
-          =^･ ⩊ ･^=<br />loading cats…
+          =^･ ⩊ ･^=
+          <br />
+          {loaded ? "the cats are napping 😴" : "fetching cats…"}
         </div>
         <div className="meowcap">{caption}</div>
       </div>
@@ -79,7 +89,13 @@ export default function MeowFeed({ caption = "while you wait..." }) {
         {isVid(m.url) ? (
           <video className="meowimg" src={m.url} autoPlay muted loop playsInline />
         ) : (
-          <img className="meowimg" src={m.url} alt={m.title || "cat"} loading="lazy" />
+          <img
+            className="meowimg"
+            src={m.url}
+            alt={m.title || "cat"}
+            loading="lazy"
+            onError={() => onBroken(m.url)}
+          />
         )}
       </div>
       <div className="meowcap">🐾 {caption}{m.sub ? ` · r/${m.sub}` : ""}</div>

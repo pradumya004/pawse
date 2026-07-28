@@ -562,7 +562,7 @@ body {
 
 .meowframe {
   width: 100%;
-  max-width: 500px;
+  max-width: 460px;
   margin: 0 auto;
   aspect-ratio: 4 / 3;
   background: var(--white);
@@ -592,6 +592,7 @@ body {
   line-height: 2;
   color: var(--ginger);
   text-align: center;
+  background: var(--panel); /* on-theme, never a stark white void */
 }
 
 .meowcap {
