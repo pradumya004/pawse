@@ -24,7 +24,7 @@
 | P0-2 | Production TURN (Cloudflare / self-host) | Infra | ⏸ parked (needs card) |
 | P0-3 | **Codec safety net** — detect an unplayable file (no decodable audio/video) → clear message, never a silent black screen | Customer/Dev | ⬜ (only a static warning hint today) |
 | P0-4 | **Clear Create/Join chooser** — two buttons, container swaps | Design/UX | ✅ done |
-| P0-5 | **Shareable room LINK** — click → lands straight in the room | UX/Sales | ⬜ next |
+| P0-5 | **Shareable room LINK** — click → lands straight in the room (`?room=CODE`) | UX/Sales | ✅ done |
 | P0-6 | **Design system / single source of truth** — one tokens file both clients import | Dev/Design | ⬜ |
 | P0-7 | **Error / empty / loading states** everywhere | UX | ⬜ |
 
@@ -69,4 +69,4 @@
 ---
 
 ## Current focus
-Path B TURN. **P0-4 shipped.** Next: **P0-5 (share link)** → **P0-3 (codec safety)** → **P0-6 (design system)** before the P1 room redesign.
+Path B TURN. **P0-4 + P0-5 shipped.** Next: **P0-3 (codec safety)** → **P0-6 (design system)** → **P0-7 (states)**, then the P1 room redesign + vibe pass.
