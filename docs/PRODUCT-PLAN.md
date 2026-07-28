@@ -33,8 +33,14 @@
 | # | Item | Lens | Status |
 |---|------|------|--------|
 | P1-1 | Room UI redesign: compact header, collapsible room code, **3 toggles (📷/🎤/💬)**, chat on→cams 2-col + panel / off→cams stacked bigger, video-as-hero (trim padding) | Design | ⬜ |
-| P1-2 | Cuter consistent theme (cats, stickers, reactions) from the design system | Design | ⬜ |
-| P1-2b | **Favicon + tab identity** — player has NO favicon (blank tab icon); add pixel-cat favicon + proper `<title>` + social preview (og:image). Quick win | Design/Sales | ⬜ |
+| P1-2 | **The "vibe" pass** (make it genuinely look good, not just functional): | Design | ⬜ |
+| P1-2a | · **Homepage/lobby glow-up** — it should feel like a cute product, not a form. Hero, warmth, personality | Design | ⬜ |
+| P1-2b | · **Sticker set** — pixel cats, paws, hearts, popcorn, film reel placed tastefully (not clutter) | Design | ⬜ |
+| P1-2c | · **Micro-animations & effects** — button/hover feedback, smooth view transitions, floating paws/hearts, a little confetti/😻 burst on "partner joined" & reactions | Design | ⬜ |
+| P1-2d | · **Typography system** — consistent pixel type *scale* (sizes/weights/spacing as tokens), readable everywhere, Press Start 2P for accents + a readable pixel body font | Design | ⬜ |
+| P1-2e | · **Overall cozy/cool vibe** — cohesive Cream & Ginger, subtle textures (scanlines/paper), dark "movie-night" mode option | Design | ⬜ |
+| P1-2f | · **Favicon + tab identity** — player has NO favicon (blank tab icon); add pixel-cat favicon + proper `<title>` + social preview (og:image). Quick win | Design/Sales | ⬜ |
+| | *(all of P1-2 sits on top of P0-6 design tokens — do tokens first so it stays consistent & nothing breaks)* | | |
 | P1-3 | Meme-feed repeat fix (bigger pool, more subreddits, de-dupe, refresh) | Dev | ⬜ |
 | P1-4 | Reactions (floating emoji) + presence polish ("paused", "buffering") | Design/Customer | ⬜ |
 | P1-5 | Mobile / tablet responsiveness (real device test) | Design | ⬜ |
