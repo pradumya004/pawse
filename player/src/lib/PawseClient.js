@@ -158,7 +158,7 @@ export class PawseClient {
     const bits = [];
     if (/(h\.?\s*265|hevc|x265)/.test(n)) bits.push("HEVC/H.265 video");
     if (/\bav1\b/.test(n)) bits.push("AV1 video");
-    if (/(e-?ac-?3|\bac-?3\b|\bddp?\b|dd5|dts|truehd|atmos|dolby)/.test(n))
+    if (/(e-?ac-?3|ac-?3|ddp|dd\+|dd[0-9]|dts|truehd|atmos|dolby)/.test(n))
       bits.push("Dolby/DTS audio");
     if (!bits.length && /\.(mkv|avi|ts|m2ts|wmv|flv|vob)$/.test(n))
       bits.push("an MKV/AVI-type container");
