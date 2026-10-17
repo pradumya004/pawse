@@ -1,6 +1,6 @@
 # 🐾 Pawse — Product Plan (execution priority queue)
 
-> This is the **prioritized "what we build/fix next"** doc. Big-picture phases/features live in [ROADMAP.md](../ROADMAP.md); live file/status lives in [FILE-TRACKER.md](../FILE-TRACKER.md). Keep statuses here current as we ship.
+> This is the **prioritized "what we build/fix next"** doc. Big-picture phases/features live in [ROADMAP.md](../ROADMAP.md). Keep statuses here current as we ship.
 >
 > Legend: ✅ done · 🚧 in progress · ⬜ todo · ⏸ parked
 
