@@ -27,7 +27,7 @@
   "content_scripts": [
     {
       "matches": ["https://www.youtube.com/*"],
-      "js": ["config.js", "content/content.js"],
+      "js": ["config.js", "sync-core.js", "content/content.js"],
       "run_at": "document_idle"
     }
   ],

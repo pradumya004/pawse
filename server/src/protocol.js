@@ -20,6 +20,9 @@ export const MSG = {
   PRESENCE: "presence", // partner joined / left / buffering
   ERROR: "error", // request failed (e.g. joining a room that doesn't exist)
 
+  // ---- client <-> server ----
+  TIME: "time", // clock ping: client sends {t0}, server replies {t0, ts}
+
   // ---- client -> server ----
   CREATE: "create", // "make a new room, I'm the host"
   JOIN: "join", // "join this room by code"
@@ -41,5 +44,6 @@ export const ACTION = {
   PLAY: "play", // resume playback
   PAUSE: "pause", // halt playback
   SEEK: "seek", // jump to a timestamp (carries mediaTime)
-  RATE: "rate", // change playback speed (drift-correction nudges)
+  RATE: "rate", // change playback speed
+  TICK: "tick", // position report every second while playing (drives drift correction)
 };  

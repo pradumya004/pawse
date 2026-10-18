@@ -7,6 +7,11 @@
  * and plays it LOCALLY. Both play native, bit-identical video — no re-encode, no
  * live-stream lag, fully seekable — and stay in sync via play/pause/seek.
  *
+ * SYNC: both sides sync to the relay's clock (ping/pong), stamp every control
+ * message with it, and report position every second while playing. The
+ * follower closes small gaps with playbackRate nudges and big ones with a seek
+ * (math in extension/sync-core.js, shared with the extension).
+ *
  * RESILIENCE: room + name persist to localStorage, so a refresh or a dropped
  * socket auto-reconnects and rejoins the same room (the server holds it for a
  * 2-min grace window). When the partner rejoins, the host re-offers the file.
@@ -14,7 +19,12 @@
  * React (App.jsx) only calls these methods and subscribes to `onState`.
  */
 import { PAWSE_CONFIG } from "../config.js";
+import "../../../extension/sync-core.js"; // sets globalThis.PawseSync
 
+const { TUNING, createClock, plan, expectedTime } = globalThis.PawseSync;
+
+const TICK_MS = 1000; // position report interval while playing
+const CLOCK_MS = 10000; // clock re-sample interval
 const CHUNK = 16 * 1024; // 16 KB DataChannel chunks (SCTP-safe)
 const HIGH_WATER = 8 * 1024 * 1024; // pause sending above 8 MB buffered
 const LOW_WATER = 2 * 1024 * 1024; // resume once drained below 2 MB
@@ -76,6 +86,17 @@ export class PawseClient {
     this.messages = []; // chat log: { mine, text }
     this.subsOn = false; // are external subtitles loaded?
 
+    // ---- clock sync + drift correction ----
+    // ?sync=off falls back to plain play/pause/seek relay (for A/B measurement).
+    this.syncOn = new URLSearchParams(location.search).get("sync") !== "off";
+    this.clock = createClock();
+    this._clockTimer = null;
+    this._baseRate = 1; // playback speed both sides agreed on (before nudges)
+    this._quietSeek = false; // next 'seeked' is ours, don't report it
+    this._errors = []; // recent gap measurements (s), for a stable readout
+    this.sync = { error: null, at: 0, rtt: null, correcting: false };
+    setInterval(() => this._tick(), TICK_MS);
+
     // Phones/browsers SUSPEND background tabs, which silently drops the socket.
     // When the tab comes back to the foreground, reconnect if we're not open —
     // connect()'s onopen auto-rejoins the saved room. This fixes the "waiting
@@ -127,6 +148,8 @@ export class PawseClient {
       partnerCam: this.partnerCam,
       messages: this.messages,
       subsOn: this.subsOn,
+      syncOn: this.syncOn,
+      sync: this.sync,
     });
   }
 
@@ -134,8 +157,17 @@ export class PawseClient {
     if (this.video === el) return;
     this.video = el;
     el.addEventListener("play", () => this._reportControl("play"));
-    el.addEventListener("pause", () => this._reportControl("pause"));
-    el.addEventListener("seeked", () => this._reportControl("seek"));
+    el.addEventListener("pause", () => {
+      this._reportControl("pause");
+      // the readout is about playback; a paused reading would go stale
+      this._errors = [];
+      this.sync = { ...this.sync, error: null, correcting: false };
+      this._emit();
+    });
+    el.addEventListener("seeked", () => {
+      if (this._quietSeek) this._quietSeek = false;
+      else this._reportControl("seek");
+    });
     // P0-3 codec safety net — catch unplayable files instead of a silent black screen.
     el.addEventListener("error", () => this._checkMediaError());
     el.addEventListener("loadedmetadata", () => this._checkVideoTrack());
@@ -221,6 +253,7 @@ export class PawseClient {
     this.ws.onopen = () => {
       this.status = "connected";
       this.reconnectDelay = 1000;
+      this._startClock();
       // Auto-rejoin a persisted room (refresh / reconnect) — but ONLY if a real
       // name was saved, so we never silently rejoin as "Guest".
       const saved = localStorage.getItem("pawse_room");
@@ -232,6 +265,7 @@ export class PawseClient {
     };
     this.ws.onclose = () => {
       this.ws = null;
+      clearInterval(this._clockTimer);
       if (localStorage.getItem("pawse_room")) {
         this.status = "reconnecting";
         this._emit();
@@ -242,6 +276,14 @@ export class PawseClient {
       }
     };
     this.ws.onmessage = (e) => this._handle(JSON.parse(e.data));
+  }
+
+  // A quick burst for a first estimate, then a slow refresh.
+  _startClock() {
+    clearInterval(this._clockTimer);
+    const ping = () => this._send("time", this.clock.ping());
+    for (let i = 0; i < 5; i++) setTimeout(ping, i * 200);
+    this._clockTimer = setInterval(ping, CLOCK_MS);
   }
 
   _scheduleReconnect() {
@@ -299,6 +341,8 @@ export class PawseClient {
       status: "connected",
       camOn: false,
       micOn: false,
+      sync: { error: null, at: 0, rtt: this.clock.rtt, correcting: false },
+      _errors: [],
     });
     this._emit();
   }
@@ -325,6 +369,10 @@ export class PawseClient {
     switch (msg.type) {
       case "hello":
         this.clientId = msg.id;
+        break;
+      case "time":
+        this.clock.pong(msg);
+        this.sync = { ...this.sync, rtt: this.clock.rtt };
         break;
       case "room":
         this.error = null; // success wipes any prior error
@@ -369,14 +417,12 @@ export class PawseClient {
         if (msg.action === "resync") {
           // Partner finished downloading and wants our current position.
           if (this.role === "host" && this.video) {
-            this._send("control", {
-              action: this.video.paused ? "pause" : "play",
-              mediaTime: this.video.currentTime,
-              sentAt: Date.now(),
-            });
+            this._send("control", this._position(this.video.paused ? "pause" : "play"));
           }
+        } else if (msg.action === "tick") {
+          this._onTick(msg);
         } else {
-          this._applyRemoteControl(msg.action, msg.mediaTime);
+          this._applyRemoteControl(msg);
         }
         break;
       case "error": {
@@ -544,20 +590,90 @@ export class PawseClient {
 
   // ---- playback sync ----
 
-  _reportControl(action) {
-    if (this.suppress) return;
-    this._send("control", { action, mediaTime: this.video.currentTime, sentAt: Date.now() });
+  // Our position, stamped with the relay clock so the partner can add transit time.
+  _position(action) {
+    const v = this.video;
+    return {
+      action,
+      mediaTime: v.currentTime,
+      paused: v.paused,
+      rate: this.role === "host" ? v.playbackRate : this._baseRate,
+      sentAt: this.clock.toRelay(Date.now()),
+    };
   }
 
-  _applyRemoteControl(action, mediaTime) {
-    if (!this.video || !this.video.src) return; // nothing loaded yet
-    this.suppress = true;
-    if (typeof mediaTime === "number" && Math.abs(this.video.currentTime - mediaTime) > 0.5) {
-      this.video.currentTime = mediaTime;
+  _reportControl(action) {
+    if (this.suppress) return;
+    this._send("control", this._position(action));
+  }
+
+  _seekQuietly(t) {
+    this._quietSeek = true;
+    this.video.currentTime = t;
+    setTimeout(() => (this._quietSeek = false), 2000); // in case 'seeked' never fires
+  }
+
+  _applyRemoteControl(msg) {
+    const v = this.video;
+    if (!v || !v.src) return; // nothing loaded yet
+    const { action } = msg;
+    let target = msg.mediaTime;
+    // Where the partner is NOW, not where they were when they pressed it.
+    if (this.syncOn && typeof target === "number" && typeof msg.sentAt === "number") {
+      const paused = typeof msg.paused === "boolean" ? msg.paused : action !== "play";
+      target = expectedTime(
+        { mediaTime: target, at: this.clock.toLocal(msg.sentAt), paused, rate: msg.rate },
+        Date.now(),
+      );
     }
-    if (action === "play") this.video.play().catch(() => {});
-    else if (action === "pause") this.video.pause();
+    const tolerance = !this.syncOn ? 0.5 : action === "pause" ? TUNING.deadband : 0.1;
+    this.suppress = true;
+    if (typeof target === "number" && Math.abs(v.currentTime - target) > tolerance) {
+      this._seekQuietly(target);
+    }
+    if (action === "play") v.play().catch(() => {});
+    else if (action === "pause") {
+      v.pause();
+      if (this.role !== "host") v.playbackRate = this._baseRate; // drop any nudge
+      this.sync = { ...this.sync, correcting: false };
+    }
     setTimeout(() => (this.suppress = false), 150);
+  }
+
+  // Both sides report position every second while playing.
+  _tick() {
+    const v = this.video;
+    if (!this.syncOn || !this.partnerHere || !v || !v.src) return;
+    if (v.paused || v.seeking || v.readyState < 3) return;
+    this._send("control", this._position("tick"));
+  }
+
+  // Partner's position report: measure the gap; the follower also closes it.
+  _onTick(msg) {
+    if (!this.syncOn || typeof msg.sentAt !== "number") return;
+    const ref = {
+      mediaTime: msg.mediaTime,
+      at: this.clock.toLocal(msg.sentAt),
+      rate: msg.rate || 1,
+    };
+    const p = plan(this.video, ref, Date.now());
+    if (!p) return;
+    this._errors = [...this._errors, Math.abs(p.error)].slice(-5);
+    const sorted = [...this._errors].sort((a, b) => a - b);
+    const correcting = this.role !== "host" && p.kind !== "ok";
+    this.sync = {
+      error: sorted[Math.floor(sorted.length / 2)],
+      at: Date.now(),
+      rtt: this.clock.rtt,
+      correcting,
+    };
+    if (this.role !== "host") {
+      this._baseRate = ref.rate;
+      if (p.kind === "seek") this._seekQuietly(p.to);
+      const rate = ref.rate * p.rate;
+      if (Math.abs(this.video.playbackRate - rate) > 1e-3) this.video.playbackRate = rate;
+    }
+    this._emit();
   }
 
   // =====================================================================

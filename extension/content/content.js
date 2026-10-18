@@ -15,12 +15,20 @@
  * partner, who applies it, which fires their event... an infinite echo. The
  * `suppress` flag is our echo suppression: while applying a remote command we
  * ignore the local events it causes.
+ *
+ * DRIFT CORRECTION: every second while playing we report our position; the
+ * follower compares the partner's report with its own clock and closes small
+ * gaps with playbackRate nudges, big ones with a seek (sync-core.js). Timestamps
+ * arrive here already converted to local Date.now() time by the background.
  */
 
 let video = null; // the <video> element we're syncing
 let seq = 0; // increments on every LOCAL action we send (ordering)
 let suppress = false; // true while applying a remote command (don't rebroadcast)
 let contextDead = false; // true once the extension was reloaded (orphaned tab)
+let quietSeek = false; // next 'seeked' is our own correction, don't report it
+let baseRate = 1; // agreed playback speed, before drift nudges
+let nudging = false; // is playbackRate currently nudged?
 
 /**
  * Send a message to the background, surviving the "Extension context
@@ -119,12 +127,18 @@ function attachListeners(v) {
     if (!suppress && !pausedForBuffer) userWantsToPlay = false;
     reportLocal("pause");
   });
-  v.addEventListener("seeked", () => reportLocal("seek"));
+  v.addEventListener("seeked", () => {
+    if (quietSeek) quietSeek = false;
+    else reportLocal("seek");
+  });
 
   // Buffering signals — the fix for "one keeps running while the other stalls".
   // `waiting` = stalled and needs to buffer; `playing` = data arrived, resumed.
   v.addEventListener("waiting", onSelfBufferStart);
   v.addEventListener("playing", onSelfBufferEnd);
+  // 'playing' never fires if we were paused (e.g. waiting for a buffering
+  // partner) while our own buffer refilled; without this both sides wait forever.
+  v.addEventListener("canplay", onSelfBufferEnd);
 }
 
 /**
@@ -134,8 +148,63 @@ function attachListeners(v) {
  */
 function reportLocal(action) {
   if (suppress || !video) return;
-  safeSend({ cmd: "LOCAL_CONTROL", action, mediaTime: video.currentTime, seq: ++seq });
+  safeSend({
+    cmd: "LOCAL_CONTROL",
+    action,
+    mediaTime: video.currentTime,
+    paused: video.paused,
+    rate: nudging ? baseRate : video.playbackRate,
+    at: Date.now(),
+    seq: ++seq,
+  });
 }
+
+/** YouTube marks the player while an ad plays; its <video> is the ad then. */
+function isAd() {
+  return !!document.querySelector(".ad-showing");
+}
+
+function seekQuietly(t) {
+  quietSeek = true;
+  video.currentTime = t;
+  setTimeout(() => (quietSeek = false), 2000); // in case 'seeked' never fires
+}
+
+/**
+ * Where the partner is now, from a report stamped at local time `at`.
+ * Old relays/clients send no timestamp: fall back to the raw position.
+ */
+function targetOf(m) {
+  if (typeof m.mediaTime !== "number") return null;
+  if (typeof m.at !== "number") return m.mediaTime;
+  return PawseSync.expectedTime(
+    { mediaTime: m.mediaTime, at: m.at, paused: m.paused, rate: m.rate },
+    Date.now(),
+  );
+}
+
+/** Partner's once-a-second position: measure the gap; the follower closes it. */
+function onTick(m) {
+  if (!findVideo() || isAd() || typeof m.at !== "number") return;
+  const ref = { mediaTime: m.mediaTime, at: m.at, rate: m.rate || 1 };
+  const p = PawseSync.plan(video, ref, Date.now());
+  if (!p) return;
+  if (m.follower) {
+    baseRate = ref.rate;
+    if (p.kind === "seek") seekQuietly(p.to);
+    const rate = ref.rate * p.rate;
+    if (Math.abs(video.playbackRate - rate) > 1e-3) video.playbackRate = rate;
+    nudging = p.kind === "nudge";
+  }
+  safeSend({ cmd: "SYNC_STAT", error: Math.abs(p.error), correcting: !!m.follower && p.kind !== "ok" });
+}
+
+// Report position every second while playing (drives the partner's correction).
+setInterval(() => {
+  if (!video || suppress || isAd()) return;
+  if (video.paused || video.seeking || video.readyState < 3) return;
+  reportLocal("tick");
+}, 1000);
 
 /**
  * Our video just stalled. Tell the partner so they pause and wait for us.
@@ -161,15 +230,18 @@ function onSelfBufferEnd() {
  * Apply a remote command to our video, suppressing the local events it triggers
  * so they aren't re-reported to the partner.
  * @param {string} action - "play" | "pause" | "seek"
- * @param {number} mediaTime - timestamp to align to
+ * @param {object} m - { mediaTime, at?, paused?, rate? } partner's report
  */
-function applyRemote(action, mediaTime) {
+function applyRemote(action, m) {
   if (!findVideo()) return;
   suppress = true;
 
-  // Only seek if we're meaningfully out of position (avoids tiny jitter seeks).
-  if (typeof mediaTime === "number" && Math.abs(video.currentTime - mediaTime) > 0.5) {
-    video.currentTime = mediaTime;
+  // Only seek if meaningfully out of position. With a timestamp we know where
+  // the partner is now, so the tolerance can be tight.
+  const target = targetOf(m);
+  const tolerance = typeof m.at !== "number" ? 0.5 : action === "pause" ? PawseSync.TUNING.deadband : 0.1;
+  if (target != null && Math.abs(video.currentTime - target) > tolerance) {
+    seekQuietly(target);
   }
   if (action === "play") {
     userWantsToPlay = true;
@@ -177,6 +249,8 @@ function applyRemote(action, mediaTime) {
   } else if (action === "pause") {
     userWantsToPlay = false;
     video.pause();
+    if (nudging) video.playbackRate = baseRate;
+    nudging = false;
   }
 
   // Release suppression after the browser has fired the resulting events.
@@ -220,7 +294,9 @@ function maybeResume() {
  */
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg.cmd === "REMOTE_CONTROL") {
-    applyRemote(msg.action, msg.mediaTime);
+    applyRemote(msg.action, msg);
+  } else if (msg.cmd === "REMOTE_TICK") {
+    onTick(msg);
   } else if (msg.cmd === "REMOTE_VIDEO") {
     // Partner switched videos -> follow them (navigates + reloads this tab).
     navigateTo(msg.videoId);
@@ -244,7 +320,7 @@ chrome.runtime.onMessage.addListener((msg) => {
     // 2. Right video -> align time + play/pause.
     currentVideoId = getVideoId();
     if (typeof m.mediaTime === "number") {
-      applyRemote(m.paused ? "pause" : "play", m.mediaTime);
+      applyRemote(m.paused ? "pause" : "play", m);
     }
   } else if (msg.cmd === "REPORT_VIDEO") {
     // Background (just created/joined a room) asks what video we're on.

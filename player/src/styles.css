@@ -490,6 +490,28 @@ body {
 .filebtn { display: inline-block; }
 .filename { font-size: var(--fs-2xs); color: var(--ink-soft); word-break: break-all; }
 
+/* live sync readout: hard pixel chip, colored square like the status dot */
+.syncbadge {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 6px var(--sp-2);
+  background: var(--white);
+  border: var(--border-2);
+  box-shadow: var(--shadow-sm);
+  font-size: var(--fs-2xs);
+  letter-spacing: 1px;
+  color: var(--ink);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.syncdot { width: 8px; height: 8px; flex-shrink: 0; background: var(--ink-soft); }
+.syncbadge.good .syncdot { background: var(--live); }
+.syncbadge.fix .syncdot { background: var(--ginger); }
+.syncbadge.bad .syncdot { background: var(--off); }
+.syncbadge.idle { color: var(--ink-soft); }
+
 .progress { display: flex; flex-direction: column; gap: 8px; }
 .progresslabel { font-size: var(--fs-2xs); letter-spacing: 0.5px; color: var(--ink); }
 

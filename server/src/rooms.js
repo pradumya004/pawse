@@ -67,6 +67,8 @@ export function createRoom(ws) {
       action: "pause",
       mediaTime: 0,
       paused: true,
+      rate: 1,
+      sentAt: null, // relay-clock time mediaTime was true at
       updatedAt: Date.now(),
     },
     createdAt: Date.now(),

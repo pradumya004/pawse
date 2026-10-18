@@ -60,9 +60,14 @@ function setPartner(here, name) {
  * @param {boolean} [partnerHere]
  * @param {string} [partnerName]
  */
-function showRoom(code, role, partnerHere, partnerName) {
+function showRoom(code, role, partnerHere, partnerName, sync) {
   $("roomCode").textContent = code;
-  setStatus(role === "host" ? "HOSTING" : "IN SYNC", true);
+  let label = role === "host" ? "HOSTING" : "IN ROOM";
+  if (partnerHere && sync && Date.now() - sync.at < 3000) {
+    const ms = Math.round(sync.error * 1000);
+    label = ms <= 50 ? `IN SYNC ${ms}MS` : `CATCHING UP ${ms}MS`;
+  }
+  setStatus(label, true);
   setPartner(partnerHere, partnerName);
   setView(true);
 }
@@ -108,7 +113,7 @@ $("copyBtn").addEventListener("click", async () => {
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg.cmd !== "STATE") return;
   if (msg.room) {
-    showRoom(msg.room, msg.role, msg.partnerHere, msg.partnerName);
+    showRoom(msg.room, msg.role, msg.partnerHere, msg.partnerName, msg.sync);
   } else {
     setView(false);
     setStatus(msg.error ? `ERR: ${msg.error}` : "NOT IN A ROOM", false);
@@ -122,7 +127,7 @@ chrome.runtime.onMessage.addListener((msg) => {
   if (saved.pawse_name) $("nameInput").value = saved.pawse_name;
   const s = await chrome.runtime.sendMessage({ cmd: "GET_STATE" });
   if (s?.room) {
-    showRoom(s.room, s.role, s.partnerHere, s.partnerName);
+    showRoom(s.room, s.role, s.partnerHere, s.partnerName, s.sync);
   } else {
     setView(false); // explicitly show the lobby (don't rely on default markup)
     setStatus("NOT IN A ROOM", false);

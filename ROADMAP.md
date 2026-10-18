@@ -44,7 +44,7 @@ Both modes reuse the **same relay (Phase 1), same protocol, same drift engine.**
 | 1.2 | Room lifecycle | ✅ | `create` → 6-char share code → `join`. **Grace window (2 min)** on empty so refresh/blip can rejoin same code. `server/src/rooms.js` |
 | 1.3 | Roles | ✅ | First joiner = **host** (source of truth). Host migration if host disconnects |
 | 1.4 | Broadcast control events | ✅ | Relay `{action, mediaTime, sentAt}` to the OTHER peer (never echo to sender) |
-| 1.5 | Clock sync | ⬜ deferred | Ping/pong RTT compensation for seeks — good-enough without it for now |
+| 1.5 | Clock sync | ✅ | `time` ping/pong; offset from the lowest-RTT sample. Control messages carry relay-clock `sentAt` |
 | 1.6 | Heartbeat / presence | ✅ | 30s ping reaps dead sockets; `presence joined/left` relayed |
 | 1.7 | Free-tier cold-start handling | ⬜ deferred | Needed at deploy time (Phase 6) |
 
@@ -61,7 +61,7 @@ Both modes reuse the **same relay (Phase 1), same protocol, same drift engine.**
 | 2.1 | MV3 extension scaffold | ✅ | Popup (create/join/leave), background SW (owns WS + media cache), content script (owns `<video>`). `config.js` centralizes the relay URL |
 | 2.2 | Video adapter: generic `HTMLMediaElement` | ✅ | Listen `play/pause/seeked`, command `.play()/.pause()/.currentTime=` |
 | 2.3 | **Echo suppression** | ✅ | `suppress` flag swallows the local events a remote command triggers |
-| 2.4 | Drift correction loop | ⬜ deferred | playbackRate nudge — sync is good-enough without it; revisit if drift shows |
+| 2.4 | Drift correction loop | ✅ | 1 s position ticks; follower nudges playbackRate (max 8%) under 400 ms, seeks above. Shared with the player via `sync-core.js` |
 | 2.5 | YouTube adapter | ✅ (SPA nav) | Follows SPA video swaps via polling; **ad-pause handling still TODO** |
 | 2.6 | Share link flow (auto-join) | ⬜ deferred | `#pawse=CODE` one-click join — planned next |
 | 2.7 | **Video-follow sync** (NEW) | ✅ | Room tracks `videoId`; host switches video → partner's tab auto-navigates & re-syncs. Surfaced from real use, not original spec |

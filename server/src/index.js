@@ -26,6 +26,27 @@ import {
 
 const PORT = process.env.PORT || 8080;
 
+// Test hook: add latency to every message in each direction, keeping order per
+// socket. Used by scripts/measure-sync.mjs; both default to 0 in production.
+const DELAY_MS = Number(process.env.RELAY_DELAY_MS) || 0;
+const JITTER_MS = Number(process.env.RELAY_JITTER_MS) || 0;
+
+function later(ws, lane, fn) {
+  if (!DELAY_MS && !JITTER_MS) return fn();
+  const q = (ws[lane] ||= []);
+  const due = Math.max(q.at(-1)?.due ?? 0, Date.now() + DELAY_MS + Math.random() * JITTER_MS);
+  q.push({ due, fn });
+  if (q.length === 1) drain(q);
+}
+
+// One timer per lane, so equal due times can never swap order (TCP doesn't).
+function drain(q) {
+  setTimeout(() => {
+    while (q.length && q[0].due <= Date.now()) q.shift().fn();
+    if (q.length) drain(q);
+  }, Math.max(0, q[0].due - Date.now()));
+}
+
 /**
  * HTTP server. Only answers /health; everything else 404s. The WebSocket
  * server shares this same port by attaching to it below.
@@ -49,7 +70,10 @@ const wss = new WebSocketServer({ server });
  * @param {object} [payload] - extra fields merged alongside `type`
  */
 function send(ws, type, payload = {}) {
-  if (ws.readyState === ws.OPEN) ws.send(JSON.stringify({ type, ...payload }));
+  const data = JSON.stringify({ type, ...payload });
+  later(ws, "outQ", () => {
+    if (ws.readyState === ws.OPEN) ws.send(data);
+  });
 }
 
 /**
@@ -87,7 +111,7 @@ wss.on("connection", (ws) => {
     } catch {
       return; // ignore anything that isn't valid JSON
     }
-    handle(ws, msg);
+    later(ws, "inQ", () => handle(ws, msg));
   });
 
   ws.on("close", () => {
@@ -119,6 +143,11 @@ function partnerNameOf(room, selfId) {
  */
 function handle(ws, msg) {
   switch (msg.type) {
+    // Clock ping: echo the client's t0 with our time so it can estimate offset.
+    case MSG.TIME:
+      send(ws, MSG.TIME, { t0: msg.t0, ts: Date.now() });
+      break;
+
     // "Make a new room, I'm the host."
     case MSG.CREATE: {
       ws.name = msg.name || "Guest";
@@ -168,15 +197,20 @@ function handle(ws, msg) {
       break;
     }
 
-    // Playback command: remember it, then relay to the partner.
-    // We MUTATE fields (not replace room.state) so videoId is preserved.
+    // Playback command or tick: remember it, then relay to the partner.
+    // sentAt is relay-clock time (clients sync to us via MSG.TIME), so the
+    // receiver can add the transit time. We MUTATE fields so videoId is kept.
     case MSG.CONTROL: {
       const room = getRoom(ws.roomCode);
       if (!room) return;
-      room.state.action = msg.action;
-      room.state.mediaTime = msg.mediaTime;
-      room.state.paused = msg.action === "pause";
-      room.state.updatedAt = Date.now();
+      if (typeof msg.mediaTime === "number") {
+        room.state.action = msg.action;
+        room.state.mediaTime = msg.mediaTime;
+        room.state.paused = typeof msg.paused === "boolean" ? msg.paused : msg.action === "pause";
+        room.state.rate = msg.rate || 1;
+        room.state.sentAt = msg.sentAt ?? null;
+        room.state.updatedAt = Date.now();
+      }
       broadcast(
         room,
         MSG.CONTROL,
@@ -184,6 +218,8 @@ function handle(ws, msg) {
           action: msg.action,
           mediaTime: msg.mediaTime,
           sentAt: msg.sentAt,
+          paused: msg.paused,
+          rate: msg.rate,
           seq: msg.seq,
           from: ws.id,
         },

@@ -20,9 +20,23 @@
  */
 
 // Load shared config into the service worker's global scope (sets PAWSE_CONFIG).
-importScripts("config.js");
+importScripts("config.js", "sync-core.js");
 
 const RELAY_URL = PAWSE_CONFIG.RELAY_WS;
+
+// Relay clock. Content scripts work in local Date.now() time; we convert
+// timestamps to relay time on the way out and back on the way in.
+const clock = PawseSync.createClock();
+let clockTimer = null;
+
+function startClock() {
+  clearInterval(clockTimer);
+  const ping = () => sendToServer("time", clock.ping());
+  for (let i = 0; i < 5; i++) setTimeout(ping, i * 200);
+  clockTimer = setInterval(ping, 10000);
+}
+
+const toLocal = (sentAt) => (typeof sentAt === "number" ? clock.toLocal(sentAt) : null);
 
 /** Live connection + session state. Rebuilt from storage if the worker restarts. */
 const state = {
@@ -37,7 +51,9 @@ const state = {
   partnerHere: false, // is the partner currently connected?
   reconnectDelay: 1000, // backoff (ms), grows on repeated failures, caps at 30s
   // The room's latest media state — the "where should I be?" answer.
-  media: { videoId: null, mediaTime: 0, paused: true },
+  // `at` = local time mediaTime was true at, so a fresh tab can extrapolate.
+  media: { videoId: null, mediaTime: 0, paused: true, rate: 1, at: null },
+  sync: null, // { error, correcting, at } measured by the content script
 };
 
 // ---- persistence (survive worker death) ----
@@ -72,11 +88,13 @@ function connect() {
     ws.onopen = () => {
       state.connected = true;
       state.reconnectDelay = 1000; // reset backoff on success
+      startClock();
       resolve();
     };
     ws.onclose = () => {
       state.connected = false;
       state.ws = null;
+      clearInterval(clockTimer);
       // If we still hold a room, the drop was unintended -> reconnect + rejoin.
       if (state.room) scheduleReconnect();
     };
@@ -124,6 +142,10 @@ function handleServerMessage(msg) {
       state.clientId = msg.id;
       break;
 
+    case "time": // clock ping reply
+      clock.pong(msg);
+      break;
+
     case "room": // we successfully created/joined/rejoined
       state.room = msg.room;
       state.role = msg.role;
@@ -135,6 +157,8 @@ function handleServerMessage(msg) {
           videoId: msg.hostState.videoId ?? null,
           mediaTime: msg.hostState.mediaTime ?? 0,
           paused: msg.hostState.paused ?? true,
+          rate: msg.hostState.rate || 1,
+          at: toLocal(msg.hostState.sentAt),
         };
         sendToContent({ cmd: "SYNC_STATE", media: state.media });
       }
@@ -142,11 +166,16 @@ function handleServerMessage(msg) {
       notifyPopup();
       break;
 
-    case "control": // partner pressed play/pause/seek -> apply to our video
-      state.media.mediaTime = msg.mediaTime;
-      state.media.paused = msg.action === "pause";
-      sendToContent({ cmd: "REMOTE_CONTROL", action: msg.action, mediaTime: msg.mediaTime });
+    case "control": { // partner pressed play/pause/seek, or a position tick
+      const paused = typeof msg.paused === "boolean" ? msg.paused : msg.action === "pause";
+      const at = toLocal(msg.sentAt);
+      Object.assign(state.media, { mediaTime: msg.mediaTime, paused, rate: msg.rate || 1, at });
+      const payload = { action: msg.action, mediaTime: msg.mediaTime, paused, rate: msg.rate || 1, at };
+      if (msg.action === "tick")
+        sendToContent({ cmd: "REMOTE_TICK", ...payload, follower: state.role !== "host" });
+      else sendToContent({ cmd: "REMOTE_CONTROL", ...payload });
       break;
+    }
 
     case "video": // partner switched to a different video -> follow them
       state.media.videoId = msg.videoId;
@@ -200,6 +229,7 @@ function notifyPopup(extra = {}) {
       myName: state.myName,
       partnerName: state.partnerName,
       partnerHere: state.partnerHere,
+      sync: state.sync,
       ...extra,
     })
     .catch(() => {});
@@ -263,19 +293,31 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           myName: state.myName,
           partnerName: state.partnerName,
           partnerHere: state.partnerHere,
+          sync: state.sync,
         });
         break;
 
       // ---- from content script ----
-      case "LOCAL_CONTROL": // user acted on our video -> relay to the partner
-        state.media.mediaTime = msg.mediaTime;
-        state.media.paused = msg.action === "pause";
+      case "LOCAL_CONTROL": { // user acted on our video, or a tick -> relay to the partner
+        // ticks only from the synced tab, and only when someone is listening
+        if (msg.action === "tick" && (sender?.tab?.id !== state.syncTabId || !state.partnerHere)) break;
+        const at = msg.at ?? Date.now();
+        const paused = typeof msg.paused === "boolean" ? msg.paused : msg.action === "pause";
+        Object.assign(state.media, { mediaTime: msg.mediaTime, paused, rate: msg.rate || 1, at });
         sendToServer("control", {
           action: msg.action,
           mediaTime: msg.mediaTime,
-          sentAt: Date.now(),
+          paused,
+          rate: msg.rate || 1,
+          sentAt: clock.toRelay(at),
           seq: msg.seq,
         });
+        break;
+      }
+
+      case "SYNC_STAT": // content script measured the gap to the partner
+        state.sync = { error: msg.error, correcting: msg.correcting, at: Date.now() };
+        notifyPopup();
         break;
 
       case "LOCAL_VIDEO": // our tab is on / switched to a video -> tell the room

@@ -11,6 +11,7 @@ import { PawseClient } from "./lib/PawseClient.js";
 import Cat from "./Cat.jsx";
 import CatSticker from "./CatSticker.jsx";
 import MeowFeed from "./MeowFeed.jsx";
+import SyncBadge from "./SyncBadge.jsx";
 
 export default function App() {
   const [s, setS] = useState({
@@ -358,6 +359,9 @@ export default function App() {
                   />
                   {s.fileName && (
                     <span className="filename">🎞️ {s.fileName}</span>
+                  )}
+                  {s.partnerHere && s.transfer === "ready" && (
+                    <SyncBadge sync={s.sync} on={s.syncOn} partnerName={s.partnerName} />
                   )}
                 </div>
                 {(s.audioMissing || s.formatWarn) && (

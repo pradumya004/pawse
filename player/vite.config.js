@@ -6,5 +6,6 @@ import react from "@vitejs/plugin-react";
 // dist/ for free hosting (GitHub Pages / Vercel).
 export default defineConfig({
   plugins: [react()],
-  server: { port: 5173 },
+  // fs.allow: the sync math lives in ../extension/sync-core.js (shared).
+  server: { port: 5173, fs: { allow: [".."] } },
 });
