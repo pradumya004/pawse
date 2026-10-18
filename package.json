@@ -1,0 +1,12 @@
+{
+  "name": "pawse",
+  "private": true,
+  "description": "Watch-together sync: relay, web player, Chrome extension",
+  "scripts": {
+    "test": "node --test test/sync-core.test.cjs server/test/relay.test.js",
+    "measure": "node scripts/measure-sync.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.56.1"
+  }
+}
