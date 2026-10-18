@@ -4,7 +4,9 @@ Watch movies together from two places, in sync. One person picks a file, the oth
 
 **Live:** https://pawsetv.vercel.app (open it in two windows to try it alone)
 
-![Pawse room: movie player, camera and mic tiles, chat](docs/screenshot.png)
+![Two Pawse players side by side: same frame, same timecode, while the host plays, pauses and seeks](docs/demo.webp)
+
+[Watch the 15 s launch clip](docs/launch.mp4) · In a recorded test the two players stayed about 0.1 s apart after play, pause and seek.
 
 ## Why
 
