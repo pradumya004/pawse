@@ -4,9 +4,11 @@ Watch movies together from two places, in sync. One person picks a file, the oth
 
 **Live:** https://pawsetv.vercel.app (open it in two windows to try it alone)
 
-![Two Pawse players side by side: same frame, same timecode, while the host plays, pauses and seeks](docs/demo.webp)
+[![Film: two players drift 350 ms apart, the sync engine pulls the follower in until the badge reads IN SYNC 6MS](docs/film.webp)](docs/launch.mp4)
 
-[Watch the 15 s launch clip](docs/launch.mp4)
+[Watch the 13 s film (MP4)](docs/launch.mp4). Below, a real recording of two players:
+
+![Two Pawse players side by side: same frame, same timecode, while the host plays, pauses and seeks](docs/demo.webp)
 
 ## What it is
 
