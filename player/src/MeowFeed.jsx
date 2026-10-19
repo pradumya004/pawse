@@ -15,7 +15,6 @@ const SUBS = [
   "WhatsWrongWithYourCat",
   "WhyCatHowCat",
   "cats",
-  "catpics",
 ];
 
 const isVid = (u) => /\.(mp4|webm)$/i.test(u);
