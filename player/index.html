@@ -9,6 +9,10 @@
     <link rel="apple-touch-icon" href="/favicon.svg" />
     <meta name="theme-color" content="#ef7d1a" />
 
+    <!-- LCP image (Meow Feed poster) and the pixel font, fetched before the JS bundle -->
+    <link rel="preload" as="image" href="/meow-poster.webp" type="image/webp" fetchpriority="high" />
+    <link rel="preload" as="font" href="/PressStart2P.woff" type="font/woff" crossorigin />
+
     <title>🐾 Pawse — watch movies together, from anywhere</title>
     <meta
       name="description"

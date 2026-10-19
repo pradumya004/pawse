@@ -10,7 +10,7 @@
 
 @font-face {
   font-family: "PressStart";
-  src: url("/PressStart2P.ttf") format("truetype");
+  src: url("/PressStart2P.woff") format("woff");
   font-display: swap;
 }
 
@@ -607,14 +607,6 @@ body {
 @keyframes pop {
   0% { transform: scale(0.96); opacity: 0.4; }
   100% { transform: scale(1); opacity: 1; }
-}
-
-.meowempty {
-  font-size: var(--fs-lg);
-  line-height: 2;
-  color: var(--ginger);
-  text-align: center;
-  background: var(--panel); /* on-theme, never a stark white void */
 }
 
 .meowcap {

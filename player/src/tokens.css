@@ -12,7 +12,7 @@
   --panel: #e7dabc;
   --panel-edge: #b8ac92;
   --ink: #2a2438;          /* primary text / chunky borders */
-  --ink-soft: #7a6f5d;     /* muted text, hints */
+  --ink-soft: #665b4a;     /* muted text, hints (4.5:1 on --panel) */
   --ink-deep: #2a1a12;     /* warm near-black (error edge/shadow) */
   --ginger: #ef7d1a;       /* brand / primary CTA */
   --ginger-deep: #d9660a;  /* CTA pressed / accent */

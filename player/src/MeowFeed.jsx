@@ -21,6 +21,17 @@ const SUBS = [
 const isVid = (u) => /\.(mp4|webm)$/i.test(u);
 const isMedia = (u) => /\.(jpg|jpeg|png|webp|gif|mp4|webm)$/i.test(u);
 
+// Local mascot shown first: preloaded in index.html, so it is the fast LCP.
+const POSTER = { url: "/meow-poster.webp", title: "Pawse pixel cat", poster: true };
+
+// Reddit's resized webp preview (<= 640px) instead of the multi-MB original.
+// GIFs and videos keep the original so they still animate.
+function displayUrl(m) {
+  if (/\.(gif|mp4|webm)$/i.test(m.url)) return m.url;
+  const fit = (m.preview || []).filter((p) => Number(/width=(\d+)/.exec(p)?.[1]) <= 640);
+  return fit.length ? fit[fit.length - 1] : m.url;
+}
+
 function pickTwo() {
   const a = Math.floor(Math.random() * SUBS.length);
   let b = Math.floor(Math.random() * SUBS.length);
@@ -29,7 +40,7 @@ function pickTwo() {
 }
 
 export default function MeowFeed({ caption = "while you wait..." }) {
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState([POSTER]);
   const [i, setI] = useState(0);
   const [loaded, setLoaded] = useState(false); // fetch finished (success or empty)
 
@@ -47,8 +58,8 @@ export default function MeowFeed({ caption = "while you wait..." }) {
       const media = results
         .flatMap((d) => d.memes || [])
         .filter((m) => m && m.url && !m.nsfw && isMedia(m.url))
-        .map((m) => ({ url: m.url, title: m.title, sub: m.subreddit }));
-      setItems(media);
+        .map((m) => ({ url: displayUrl(m), title: m.title, sub: m.subreddit }));
+      setItems([POSTER, ...media]);
       setLoaded(true);
     });
     return () => {
@@ -65,22 +76,9 @@ export default function MeowFeed({ caption = "while you wait..." }) {
 
   // A broken/hotlink-blocked image → drop it and move on (never a blank box).
   const onBroken = (badUrl) => {
-    setItems((prev) => prev.filter((x) => x.url !== badUrl));
+    setItems((prev) => prev.filter((x) => x.poster || x.url !== badUrl));
     setI(0);
   };
-
-  if (!items.length) {
-    return (
-      <div className="meow">
-        <div className="meowframe meowempty">
-          =^･ ⩊ ･^=
-          <br />
-          {loaded ? "the cats are napping 😴" : "fetching cats…"}
-        </div>
-        <div className="meowcap">{caption}</div>
-      </div>
-    );
-  }
 
   const m = items[i];
   return (
@@ -93,12 +91,18 @@ export default function MeowFeed({ caption = "while you wait..." }) {
             className="meowimg"
             src={m.url}
             alt={m.title || "cat"}
-            loading="lazy"
+            width="920"
+            height="690"
+            loading={m.poster ? "eager" : "lazy"}
+            fetchpriority={m.poster ? "high" : "auto"}
             onError={() => onBroken(m.url)}
           />
         )}
       </div>
-      <div className="meowcap">🐾 {caption}{m.sub ? ` · r/${m.sub}` : ""}</div>
+      <div className="meowcap">
+        🐾 {loaded && items.length < 2 ? "the cats are napping 😴" : caption}
+        {m.sub ? ` · r/${m.sub}` : ""}
+      </div>
     </div>
   );
 }
